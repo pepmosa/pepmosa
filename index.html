@@ -1,0 +1,59 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PEPMOSA • Group Buy</title><link rel="stylesheet" href="style.css"></head><body>
+<header><a class="brand" href="index.html"><span class="logoMark">P</span>PEPMOSA</a><nav class="nav"><a href="index.html">HOME</a><a href="#products">PRODUCTS</a><a href="calculator.html">CALCULATOR</a><a href="protocols.html">PROTOCOLS</a><a href="track.html">TRACK</a><a href="coa.html">COA</a></nav><button class="cart" onclick="openCart()">🛒 CART (<span id="cartCount">0</span>)</button></header>
+<main class="wrap"><section class="hero"><div class="heroLogo">PEPMOSA</div><div><div class="eyebrow">GROUP BUY</div><h1>SHOP <span>PEPMOSA</span></h1><p class="muted">Choose your product and variant. Minimum quantities are set individually for every Group Buy, product and variant.</p><div id="gbStatus" class="notice">Loading current Group Buy…</div></div></section>
+<section id="products"><div class="sectionHead"><div><div class="eyebrow">AVAILABLE NOW</div><h2>PRODUCTS</h2></div><input id="search" class="search" placeholder="Search products…" oninput="renderProducts()"></div><div id="productGrid" class="grid"><div class="card">Loading…</div></div></section>
+<div class="footer">PEPMOSA • Group Buy</div></main>
+<div id="cartModal" class="modal"><div class="modalbox"><div class="sectionHead"><h2>Your Cart</h2><button class="btn secondary" onclick="closeModal('cartModal')">CLOSE</button></div><div id="cartItems"></div><div class="row"><b>TOTAL</b><b id="cartTotal">₱0.00</b></div><div class="actions"><button class="btn primary wide" onclick="checkout()">CHECKOUT</button></div></div></div>
+<div id="checkoutModal" class="modal"><div class="modalbox"><h2>Checkout</h2><div id="checkoutMsg" class="muted"></div><div class="formGrid"><div class="field"><label>Email</label><input id="email" type="email" required></div><div class="field"><label>Customer Name</label><input id="customerName"></div><div class="field"><label>Contact</label><input id="contact"></div><div class="field"><label>Shipping Method</label><input id="shippingMethod" placeholder="e.g. J&T"></div><div class="field full"><label>Delivery Address</label><textarea id="address"></textarea></div></div><div class="actions"><button class="btn primary" onclick="placeOrder()">SUBMIT ORDER</button><button class="btn secondary" onclick="closeModal('checkoutModal')">CANCEL</button></div></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script><script src="supabase.js"></script>
+<script>
+let currentGB=null,products=[],cart=JSON.parse(localStorage.pepmosaCart||"[]");
+initSupabase();
+async function load(){
+ try{
+  const {data:gb}=await sb.from("group_buys").select("*").eq("status","OPEN").order("created_at",{ascending:false}).limit(1).maybeSingle();
+  currentGB=gb;
+  if(!gb){$("gbStatus").innerHTML='<div class="notice error">No open Group Buy right now.</div>';return}
+  $("gbStatus").innerHTML='<b>'+esc(gb.customer_facing_name||gb.gb_number)+'</b> <span class="status open">OPEN</span>';
+  const {data:cats}=await sb.from("gb_categories").select("category_name").eq("gb_number",gb.gb_number);
+  const names=(cats||[]).map(x=>x.category_name);
+  let q=sb.from("products").select("*,product_variants(*)").eq("active",true).order("product_name");
+  if(names.length) q=q.in("category",names);
+  const r=await q; if(r.error)throw r.error; products=r.data||[];
+  const {data:mins}=await sb.from("gb_minimum_quantities").select("*").eq("gb_number",gb.gb_number);
+  for(const p of products) for(const v of (p.product_variants||[])) v.minimum_qty=Math.max(1,Number((mins||[]).find(m=>m.variant_id===v.variant_id)?.minimum_qty||1));
+  renderProducts();updateCart();
+ }catch(e){$("gbStatus").className="notice error";$("gbStatus").textContent=e.message}
+}
+function $(id){return document.getElementById(id)}
+function renderProducts(){
+ const q=$("search").value.toLowerCase();
+ const arr=products.filter(p=>(p.product_name+" "+(p.description||"")).toLowerCase().includes(q));
+ $("productGrid").innerHTML=arr.length?arr.map(p=>'<article class="card"><div class="productImg">'+(p.image_url?'<img src="'+esc(p.image_url)+'">':esc(p.product_name))+'</div><h3>'+esc(p.product_name)+'</h3><p class="muted">'+esc(p.description||"")+'</p>'+ (p.product_variants||[]).filter(v=>v.active).map(v=>'<div class="variant"><span style="min-width:75px"><b>'+esc(v.strength)+'</b><br><small>'+peso(v.price)+'</small></span><input class="qty" type="number" min="'+v.minimum_qty+'" value="'+v.minimum_qty+'" id="qty-'+v.variant_id+'"><button class="btn primary" onclick="addToCart(''+esc(p.product_id)+'',''+esc(v.variant_id)+'')">ADD</button></div><div class="minBadge">Minimum: '+v.minimum_qty+' pc</div>').join("")+'</article>').join(""):'<div class="card">No products found.</div>';
+}
+function addToCart(pid,vid){
+ const p=products.find(x=>x.product_id===pid),v=p.product_variants.find(x=>x.variant_id===vid),qty=Math.max(v.minimum_qty,Number($("qty-"+vid).value||v.minimum_qty));
+ const existing=cart.find(x=>x.variant_id===vid);
+ if(existing)existing.qty+=qty;else cart.push({product_id:pid,variant_id:vid,product_name:p.product_name,strength:v.strength,price:Number(v.price),qty});
+ localStorage.pepmosaCart=JSON.stringify(cart);updateCart();openCart();
+}
+function updateCart(){$("cartCount").textContent=cart.reduce((s,x)=>s+x.qty,0)}
+function openCart(){$("cartModal").classList.add("show");$("cartItems").innerHTML=cart.length?cart.map((x,i)=>'<div class="row"><span>'+esc(x.product_name)+' — '+esc(x.strength)+' × '+x.qty+'</span><b>'+peso(x.price*x.qty)+' <button class="btn secondary" onclick="removeCart('+i+')">×</button></b></div>').join(""):'<p class="muted">Cart is empty.</p>';$("cartTotal").textContent=peso(cart.reduce((s,x)=>s+x.price*x.qty,0))}
+function removeCart(i){cart.splice(i,1);localStorage.pepmosaCart=JSON.stringify(cart);updateCart();openCart()}
+function closeModal(id){$(id).classList.remove("show")}
+function checkout(){if(!cart.length)return alert("Cart is empty.");closeModal("cartModal");$("checkoutModal").classList.add("show")}
+async function placeOrder(){
+ try{
+  if(!currentGB)return alert("No open Group Buy.");
+  const email=$("email").value.trim().toLowerCase();if(!email)return alert("Enter email.");
+  const {data:customer,error:ce}=await sb.from("customers").upsert({email,customer_name:$("customerName").value.trim(),contact:$("contact").value.trim(),address:$("address").value.trim()},{onConflict:"email"}).select().single();if(ce)throw ce;
+  const total=cart.reduce((s,x)=>s+x.price*x.qty,0);
+  const {data:o,error:oe}=await sb.from("orders").insert({gb_number:currentGB.gb_number,customer_id:customer.customer_id,email,total,payment_status:"PENDING",shipping_method:$("shippingMethod").value.trim(),shipping_fee:0}).select().single();if(oe)throw oe;
+  const rows=cart.map(x=>({order_id:o.order_id,product_id:x.product_id,variant_id:x.variant_id,product_name:x.product_name,strength:x.strength,qty:x.qty,unit_price:x.price,line_total:x.price*x.qty}));
+  const {error:ie}=await sb.from("order_items").insert(rows);if(ie)throw ie;
+  $("checkoutMsg").className="notice success";$("checkoutMsg").textContent="Order submitted: "+o.order_id+". Please follow the payment instructions from PEPMOSA.";
+  cart=[];localStorage.removeItem("pepmosaCart");updateCart();
+ }catch(e){$("checkoutMsg").className="notice error";$("checkoutMsg").textContent=e.message}
+}
+load();
+</script></body></html>
