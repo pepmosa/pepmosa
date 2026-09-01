@@ -9,86 +9,266 @@
 
 <style>
 /* =========================================================
-   PEPMOSA HOMEPAGE OVERRIDES
+   PEPMOSA PAGE DESIGN
    ========================================================= */
 
-.hero {
-  display: grid !important;
-  grid-template-columns: 48% 52% !important;
-  align-items: center !important;
-  gap: 0 !important;
-  min-height: 360px !important;
+body{
+  margin:0;
+  background:
+    radial-gradient(circle at 8% 15%, rgba(255,120,190,.16), transparent 28%),
+    radial-gradient(circle at 92% 18%, rgba(190,140,255,.15), transparent 30%),
+    radial-gradient(circle at 50% 90%, rgba(255,180,220,.13), transparent 35%),
+    linear-gradient(135deg,#fff8fc 0%,#fdf2fa 48%,#f7efff 100%);
+  min-height:100vh;
 }
 
-/* LARGE CENTER / HERO LOGO */
-.heroLogo {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: 100% !important;
-  height: 100% !important;
-  min-height: 320px !important;
-  padding: 20px !important;
-  overflow: hidden !important;
-  box-sizing: border-box !important;
+/* subtle decorative background */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:-1;
+  opacity:.45;
+  background:
+    radial-gradient(circle at 20% 40%, rgba(255,255,255,.9) 0 2px, transparent 3px),
+    radial-gradient(circle at 80% 65%, rgba(255,255,255,.8) 0 2px, transparent 3px);
+  background-size:55px 55px,75px 75px;
 }
 
-.heroLogo img {
-  display: block !important;
-  width: 100% !important;
-  max-width: 560px !important;
-  height: auto !important;
-  max-height: 330px !important;
-  object-fit: contain !important;
+/* =========================================================
+   HEADER LOGO
+   ========================================================= */
+
+.brand{
+  display:flex !important;
+  align-items:center;
+  gap:9px;
+  text-decoration:none;
+  font-weight:800;
 }
 
-/* HEADER LOGO */
-.brand {
-  display: flex !important;
-  align-items: center !important;
-  text-decoration: none !important;
-  gap: 8px !important;
+.brand img{
+  width:52px;
+  height:42px;
+  object-fit:contain;
+  display:block;
 }
 
-.brand .logoMark {
-  display: none !important;
+/* remove old P square if present */
+.brand .logoMark{
+  display:none;
 }
 
-.brandLogo {
-  display: block !important;
-  width: 145px !important;
-  height: 48px !important;
-  object-fit: contain !important;
-  object-position: left center !important;
+/* =========================================================
+   HERO
+   ========================================================= */
+
+.hero{
+  position:relative;
+  display:grid;
+  grid-template-columns:48% 52%;
+  align-items:center;
+  min-height:390px;
+  padding:34px 42px;
+  overflow:hidden;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,255,255,.96),
+      rgba(255,241,249,.94) 55%,
+      rgba(247,235,255,.94)
+    );
+
+  border:1px solid rgba(190,100,165,.20);
+  border-radius:30px;
+
+  box-shadow:
+    0 20px 60px rgba(150,70,130,.10),
+    inset 0 1px 0 rgba(255,255,255,.95);
 }
 
-/* keep header clean */
-header {
-  display: flex !important;
-  align-items: center !important;
+/* decorative circles */
+.hero::before{
+  content:"";
+  position:absolute;
+  width:360px;
+  height:360px;
+  border-radius:50%;
+  left:-170px;
+  top:-170px;
+  background:rgba(255,105,180,.09);
+  pointer-events:none;
 }
 
-/* Mobile */
-@media (max-width: 760px) {
+.hero::after{
+  content:"";
+  position:absolute;
+  width:300px;
+  height:300px;
+  border-radius:50%;
+  right:-130px;
+  bottom:-160px;
+  background:rgba(175,115,255,.09);
+  pointer-events:none;
+}
 
-  .hero {
-    grid-template-columns: 1fr !important;
-    min-height: auto !important;
+/* =========================================================
+   LARGE MAIN PEPMOSA LOGO
+   ========================================================= */
+
+.heroLogo{
+  position:relative;
+  z-index:2;
+
+  min-height:330px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  padding:10px;
+}
+
+/*
+  IMPORTANT:
+  pepmosa-no-name.png is displayed very large.
+  mix-blend-mode:multiply makes white portions visually
+  blend into the page background.
+*/
+
+.heroLogo img{
+  display:block;
+
+  width:min(100%,560px);
+  height:auto;
+
+  max-height:340px;
+
+  object-fit:contain;
+
+  mix-blend-mode:multiply;
+
+  filter:
+    drop-shadow(0 12px 18px rgba(120,50,100,.08));
+
+  transform:scale(1.08);
+}
+
+/* =========================================================
+   HERO TEXT
+   ========================================================= */
+
+.gbPanel{
+  position:relative;
+  z-index:2;
+  padding:25px 15px 25px 28px;
+}
+
+.gbPanel h1{
+  margin:8px 0 12px;
+  font-size:clamp(42px,5vw,68px);
+  line-height:.98;
+  letter-spacing:-2.5px;
+}
+
+.gbPanel h1 span{
+  color:#d52b87;
+}
+
+.gbPanel .muted{
+  font-size:15px;
+  line-height:1.6;
+  max-width:560px;
+}
+
+/* =========================================================
+   GROUP BUY STATUS
+   ========================================================= */
+
+#gbStatus{
+  margin-top:20px;
+  border-radius:18px;
+}
+
+/* =========================================================
+   PRODUCTS SECTION
+   ========================================================= */
+
+#products{
+  position:relative;
+}
+
+.sectionHead{
+  margin-top:28px;
+}
+
+.sectionHead h2{
+  font-size:27px;
+  margin-top:5px;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media(max-width:850px){
+
+  .hero{
+    grid-template-columns:1fr;
+    padding:25px 20px;
+    min-height:auto;
   }
 
-  .heroLogo {
-    min-height: 260px !important;
-    padding: 25px !important;
+  .heroLogo{
+    min-height:300px;
+    order:1;
   }
 
-  .heroLogo img {
-    max-width: 430px !important;
-    max-height: 260px !important;
+  .heroLogo img{
+    width:min(100%,520px);
+    max-height:320px;
+    transform:scale(1.08);
   }
 
-  .brandLogo {
-    width: 120px !important;
-    height: 42px !important;
+  .gbPanel{
+    order:2;
+    padding:10px 5px 20px;
+    text-align:center;
+  }
+
+  .gbPanel .muted{
+    margin-left:auto;
+    margin-right:auto;
+  }
+}
+
+@media(max-width:560px){
+
+  .hero{
+    border-radius:22px;
+    padding:18px 14px;
+  }
+
+  .heroLogo{
+    min-height:230px;
+  }
+
+  .heroLogo img{
+    width:100%;
+    max-height:250px;
+    transform:scale(1.04);
+  }
+
+  .gbPanel h1{
+    font-size:40px;
+    letter-spacing:-1.5px;
+  }
+
+  .brand img{
+    width:45px;
+    height:36px;
   }
 }
 </style>
@@ -96,18 +276,12 @@ header {
 
 <body>
 
-<!-- =========================================================
-     HEADER
-     ========================================================= -->
-
 <header>
 
+  <!-- PEPMOSA LOGO IMAGE -->
   <a class="brand" href="index.html">
-    <img
-      class="brandLogo"
-      src="pepmosa-logo.png"
-      alt="PEPMOSA"
-    >
+    <img src="pepmosa-logo.png" alt="PEPMOSA">
+    <span>PEPMOSA</span>
   </a>
 
   <nav class="nav">
@@ -126,13 +300,12 @@ header {
 </header>
 
 
-<!-- =========================================================
-     MAIN
-     ========================================================= -->
-
 <main class="wrap">
 
-  <!-- HERO -->
+  <!-- =====================================================
+       HERO
+       ===================================================== -->
+
   <section class="hero">
 
     <!-- LARGE PEPMOSA NO-NAME LOGO -->
@@ -142,7 +315,6 @@ header {
         alt="PEPMOSA"
       >
     </div>
-
 
     <!-- GROUP BUY INFORMATION -->
     <div class="gbPanel">
@@ -156,8 +328,9 @@ header {
       </h1>
 
       <p class="muted">
-        Products available here are controlled by the categories opened
-        for the current Group Buy.
+        Choose your product and variant.
+        Products available here are controlled by the
+        categories opened for the current Group Buy.
       </p>
 
       <div id="gbStatus" class="notice">
@@ -169,9 +342,9 @@ header {
   </section>
 
 
-  <!-- =======================================================
+  <!-- =====================================================
        PRODUCTS
-       ======================================================= -->
+       ===================================================== -->
 
   <section id="products">
 
@@ -196,13 +369,13 @@ header {
 
     </div>
 
-
-    <div id="productGrid" class="grid">
-
+    <div
+      id="productGrid"
+      class="grid"
+    >
       <div class="card">
         Loading…
       </div>
-
     </div>
 
   </section>
@@ -215,9 +388,9 @@ header {
 </main>
 
 
-<!-- =========================================================
-     CART MODAL
-     ========================================================= -->
+<!-- =======================================================
+     CART
+     ======================================================= -->
 
 <div id="cartModal" class="modal">
 
@@ -238,22 +411,12 @@ header {
 
     </div>
 
-
     <div id="cartItems"></div>
 
-
     <div class="row">
-
-      <b>
-        TOTAL
-      </b>
-
-      <b id="cartTotal">
-        ₱0.00
-      </b>
-
+      <b>TOTAL</b>
+      <b id="cartTotal">₱0.00</b>
     </div>
-
 
     <div class="actions">
 
@@ -271,9 +434,9 @@ header {
 </div>
 
 
-<!-- =========================================================
-     CHECKOUT MODAL
-     ========================================================= -->
+<!-- =======================================================
+     CHECKOUT
+     ======================================================= -->
 
 <div id="checkoutModal" class="modal">
 
@@ -288,76 +451,41 @@ header {
       class="muted"
     ></div>
 
-
     <div class="formGrid">
 
       <div class="field">
-
-        <label>
-          Email
-        </label>
-
+        <label>Email</label>
         <input
           id="email"
           type="email"
           required
         >
-
       </div>
 
-
       <div class="field">
-
-        <label>
-          Customer Name
-        </label>
-
-        <input
-          id="customerName"
-        >
-
+        <label>Customer Name</label>
+        <input id="customerName">
       </div>
 
-
       <div class="field">
-
-        <label>
-          Contact
-        </label>
-
-        <input
-          id="contact"
-        >
-
+        <label>Contact</label>
+        <input id="contact">
       </div>
 
-
       <div class="field">
-
-        <label>
-          Shipping Method
-        </label>
-
+        <label>Shipping Method</label>
         <input
           id="shippingMethod"
           placeholder="e.g. J&T"
         >
-
       </div>
 
-
       <div class="field full">
-
-        <label>
-          Delivery Address
-        </label>
-
+        <label>Delivery Address</label>
         <textarea id="address"></textarea>
-
       </div>
 
     </div>
-
 
     <div class="actions">
 
@@ -382,14 +510,13 @@ header {
 </div>
 
 
-<!-- =========================================================
-     SCRIPTS
-     ========================================================= -->
+<!-- =======================================================
+     SUPABASE
+     ======================================================= -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script src="config.js"></script>
-
 <script src="supabase.js"></script>
 
 
@@ -397,210 +524,126 @@ header {
 
 let currentGB = null;
 let products = [];
-
-let cart = JSON.parse(
-  localStorage.pepmosaCart || "[]"
-);
-
-
-/* =========================================================
-   INITIALIZE SUPABASE
-   ========================================================= */
+let cart = JSON.parse(localStorage.pepmosaCart || "[]");
 
 initSupabase();
 
 
 /* =========================================================
-   LOAD GROUP BUY + PRODUCTS
+   LOAD GROUP BUY
    ========================================================= */
 
-async function load() {
+async function load(){
 
-  try {
+  try{
 
-    const {
-      data: gb,
-      error: gbError
-    } = await sb
-      .from("group_buys")
-      .select("*")
-      .eq("status", "OPEN")
-      .order("created_at", {
-        ascending: false
-      })
-      .limit(1)
-      .maybeSingle();
-
-
-    if (gbError) {
-      throw gbError;
-    }
-
+    const {data:gb} =
+      await sb
+        .from("group_buys")
+        .select("*")
+        .eq("status","OPEN")
+        .order("created_at",{ascending:false})
+        .limit(1)
+        .maybeSingle();
 
     currentGB = gb;
 
 
-    /* NO OPEN GB */
-
-    if (!gb) {
+    if(!gb){
 
       $("gbStatus").innerHTML =
-        '<div class="notice error">' +
-        'No open Group Buy right now.' +
-        '</div>';
+        '<div class="notice error">No open Group Buy right now.</div>';
 
-      renderEmptyProducts();
+      renderProducts();
 
       return;
     }
 
 
-    /* OPEN GB */
-
     $("gbStatus").innerHTML =
-      '<b>' +
-      esc(
-        gb.customer_facing_name ||
-        gb.gb_number
-      ) +
-      '</b> ' +
-      '<span class="status open">OPEN</span>';
+      '<b>'
+      + esc(gb.customer_facing_name || gb.gb_number)
+      + '</b> '
+      + '<span class="status open">OPEN</span>';
 
 
     /* =====================================================
-       GET CATEGORIES OPENED FOR THIS GB
+       GET CATEGORIES OPENED FOR THIS GROUP BUY
        ===================================================== */
 
-    const {
-      data: cats,
-      error: catError
-    } = await sb
-      .from("gb_categories")
-      .select("category_name")
-      .eq(
-        "gb_number",
-        gb.gb_number
-      );
+    const {data:cats} =
+      await sb
+        .from("gb_categories")
+        .select("category_name")
+        .eq("gb_number",gb.gb_number);
 
 
-    if (catError) {
-      throw catError;
-    }
-
-
-    const names = (cats || [])
-      .map(x => x.category_name)
-      .filter(Boolean);
-
-
-    /* =====================================================
-       GET ACTIVE PRODUCTS + VARIANTS
-       ===================================================== */
-
-    let q = sb
-      .from("products")
-      .select(
-        "*,product_variants(*)"
-      )
-      .eq(
-        "active",
-        true
-      )
-      .order(
-        "product_name"
-      );
+    const names =
+      (cats || []).map(x => x.category_name);
 
 
     /*
-      ONLY SHOW PRODUCTS BELONGING
-      TO CATEGORIES OPENED IN CURRENT GB
+      ONLY PRODUCTS BELONGING TO THE OPENED CATEGORY
+      ARE SHOWN TO CUSTOMERS.
     */
 
-    if (names.length) {
+    let q =
+      sb
+        .from("products")
+        .select("*,product_variants(*)")
+        .eq("active",true)
+        .order("product_name");
 
-      q = q.in(
-        "category",
-        names
-      );
 
-    } else {
+    if(names.length){
 
-      /*
-        If GB has no categories,
-        show no products.
-      */
+      q = q.in("category",names);
+
+    }else{
 
       products = [];
 
-      renderEmptyProducts();
+      renderProducts();
 
       return;
     }
 
 
-    const {
-      data,
-      error
-    } = await q;
+    const r = await q;
 
+    if(r.error) throw r.error;
 
-    if (error) {
-      throw error;
-    }
-
-
-    products = data || [];
+    products = r.data || [];
 
 
     /* =====================================================
-       GET MINIMUM QUANTITIES
+       GROUP BUY MINIMUM QUANTITIES
        ===================================================== */
 
-    const {
-      data: mins,
-      error: minError
-    } = await sb
-      .from("gb_minimum_quantities")
-      .select("*")
-      .eq(
-        "gb_number",
-        gb.gb_number
-      );
+    const {data:mins} =
+      await sb
+        .from("gb_minimum_quantities")
+        .select("*")
+        .eq("gb_number",gb.gb_number);
 
 
-    if (minError) {
-      throw minError;
-    }
-
-
-    /*
-      APPLY INDIVIDUAL MINIMUM
-      PER PRODUCT / VARIANT
-    */
-
-    for (
+    for(
       const p of products
-    ) {
+    ){
 
-      for (
-        const v of (
-          p.product_variants || []
-        )
-      ) {
-
-        const found =
-          (mins || []).find(
-            m =>
-              m.variant_id ===
-              v.variant_id
-          );
-
+      for(
+        const v of (p.product_variants || [])
+      ){
 
         v.minimum_qty =
           Math.max(
             1,
             Number(
-              found?.minimum_qty || 1
+              (mins || [])
+                .find(
+                  m => m.variant_id === v.variant_id
+                )
+                ?.minimum_qty || 1
             )
           );
 
@@ -610,10 +653,9 @@ async function load() {
 
 
     renderProducts();
-
     updateCart();
 
-  } catch (e) {
+  }catch(e){
 
     $("gbStatus").className =
       "notice error";
@@ -627,55 +669,22 @@ async function load() {
 
 
 /* =========================================================
-   EMPTY PRODUCTS
+   HELPERS
    ========================================================= */
 
-function renderEmptyProducts() {
-
-  $("productGrid").innerHTML = `
-    <div class="card" style="
-      grid-column:1/-1;
-      text-align:center;
-      padding:50px;
-    ">
-      <div style="font-size:42px;">
-        🛍️
-      </div>
-
-      <h3>
-        No products available yet.
-      </h3>
-
-      <p class="muted">
-        There is no open Group Buy at the moment.
-      </p>
-    </div>
-  `;
-
-}
-
-
-/* =========================================================
-   GET ELEMENT
-   ========================================================= */
-
-function $(id) {
+function $(id){
 
   return document.getElementById(id);
 
 }
 
 
-/* =========================================================
-   RENDER PRODUCTS
-   ========================================================= */
-
-function renderProducts() {
+function renderProducts(){
 
   const q =
-    $("search").value
-      .toLowerCase()
-      .trim();
+    $("search")
+      .value
+      .toLowerCase();
 
 
   const arr =
@@ -684,214 +693,218 @@ function renderProducts() {
         (
           p.product_name +
           " " +
-          (p.description || "") +
-          " " +
-          (p.category || "")
+          (p.description || "")
         )
         .toLowerCase()
         .includes(q)
     );
 
 
-  if (!arr.length) {
-
-    $("productGrid").innerHTML = `
-      <div class="card">
-        No products found.
-      </div>
-    `;
-
-    return;
-  }
-
-
   $("productGrid").innerHTML =
+    arr.length
 
-    arr.map(
-      p => `
+      ?
 
-      <article class="card">
+      arr.map(
+        p =>
 
-        <div class="productImg">
+        '<article class="card">'
 
-          ${
-            p.image_url
+        +
 
-            ? `<img
-                src="${esc(p.image_url)}"
-                alt="${esc(p.product_name)}"
-              >`
+        '<div class="productImg">'
 
-            : esc(p.product_name)
-          }
+        +
 
-        </div>
+        (
+          p.image_url
 
+          ?
 
-        <div class="eyebrow">
-          ${esc(p.category || "")}
-        </div>
+          '<img src="'
+          + esc(p.image_url)
+          + '">'
 
+          :
 
-        <h3>
-          ${esc(p.product_name)}
-        </h3>
+          esc(p.product_name)
+        )
 
+        +
 
-        <p class="muted">
-          ${esc(p.description || "")}
-        </p>
+        '</div>'
 
+        +
 
-        ${
-          (p.product_variants || [])
-            .filter(v => v.active)
-            .map(
-              v => `
+        '<h3>'
+        + esc(p.product_name)
+        + '</h3>'
 
-              <div class="variant">
+        +
 
-                <span style="min-width:100px">
+        '<p class="muted">'
+        + esc(p.description || "")
+        + '</p>'
 
-                  <b>
-                    ${esc(v.strength)}
-                  </b>
+        +
 
-                  <br>
+        (
+          p.product_variants || []
+        )
+        .filter(v => v.active)
+        .map(
 
-                  <small>
-                    ${peso(v.price)}
-                  </small>
+          v =>
 
-                </span>
+          '<div class="variant">'
 
+          +
 
-                <input
-                  class="qty"
-                  type="number"
-                  min="${v.minimum_qty}"
-                  value="${v.minimum_qty}"
-                  id="qty-${v.variant_id}"
-                >
+          '<span style="min-width:75px">'
 
+          +
 
-                <button
-                  class="btn primary"
-                  onclick="addToCart(
-                    '${esc(p.product_id)}',
-                    '${esc(v.variant_id)}'
-                  )"
-                >
-                  ADD
-                </button>
+          '<b>'
+          + esc(v.strength)
+          + '</b>'
 
-              </div>
+          +
 
+          '<br>'
 
-              <div class="minBadge">
-                Minimum:
-                ${v.minimum_qty}
-                pc
-              </div>
+          +
 
-              `
-            )
-            .join("")
-        }
+          '<small>'
+          + peso(v.price)
+          + '</small>'
 
-      </article>
+          +
 
-      `
-    )
-    .join("");
+          '</span>'
+
+          +
+
+          '<input'
+          + ' class="qty"'
+          + ' type="number"'
+          + ' min="' + v.minimum_qty + '"'
+          + ' value="' + v.minimum_qty + '"'
+          + ' id="qty-' + v.variant_id + '"'
+          + '>'
+
+          +
+
+          '<button'
+          + ' class="btn primary"'
+          + ' onclick="addToCart(\''
+          + esc(p.product_id)
+          + '\',\''
+          + esc(v.variant_id)
+          + '\')"'
+          + '>ADD</button>'
+
+          +
+
+          '</div>'
+
+          +
+
+          '<div class="minBadge">'
+          + 'Minimum: '
+          + v.minimum_qty
+          + ' pc'
+          + '</div>'
+
+        )
+        .join("")
+
+        +
+
+        '</article>'
+
+      )
+      .join("")
+
+      :
+
+      '<div class="card">'
+
+      + '<div style="text-align:center;padding:30px">'
+
+      + '<div style="font-size:34px">🛍️</div>'
+
+      + '<b>No products available yet.</b>'
+
+      + '<p class="muted">'
+
+      + (
+          currentGB
+          ? 'No products are available in the opened Group Buy categories.'
+          : 'There is no open Group Buy at the moment.'
+        )
+
+      + '</p>'
+
+      + '</div>'
+
+      + '</div>';
 
 }
 
 
 /* =========================================================
-   ADD TO CART
+   CART
    ========================================================= */
 
-function addToCart(
-  pid,
-  vid
-) {
+function addToCart(pid,vid){
 
   const p =
     products.find(
-      x =>
-        x.product_id === pid
+      x => x.product_id === pid
     );
 
 
-  if (!p) {
-    return;
-  }
-
-
   const v =
-    (p.product_variants || [])
-      .find(
-        x =>
-          x.variant_id === vid
-      );
-
-
-  if (!v) {
-    return;
-  }
-
-
-  const qtyInput =
-    $("qty-" + vid);
-
-
-  const requested =
-    Number(
-      qtyInput?.value ||
-      v.minimum_qty
+    p.product_variants.find(
+      x => x.variant_id === vid
     );
 
 
   const qty =
     Math.max(
       v.minimum_qty,
-      requested
+      Number(
+        $("qty-" + vid).value ||
+        v.minimum_qty
+      )
     );
 
 
   const existing =
     cart.find(
-      x =>
-        x.variant_id === vid
+      x => x.variant_id === vid
     );
 
 
-  if (existing) {
+  if(existing){
 
     existing.qty += qty;
 
-  } else {
+  }else{
 
     cart.push({
 
-      product_id:
-        pid,
+      product_id:pid,
 
-      variant_id:
-        vid,
+      variant_id:vid,
 
-      product_name:
-        p.product_name,
+      product_name:p.product_name,
 
-      strength:
-        v.strength,
+      strength:v.strength,
 
-      price:
-        Number(v.price),
+      price:Number(v.price),
 
-      qty:
-        qty
+      qty
 
     });
 
@@ -901,35 +914,24 @@ function addToCart(
   localStorage.pepmosaCart =
     JSON.stringify(cart);
 
-
   updateCart();
-
   openCart();
 
 }
 
 
-/* =========================================================
-   UPDATE CART COUNT
-   ========================================================= */
-
-function updateCart() {
+function updateCart(){
 
   $("cartCount").textContent =
     cart.reduce(
-      (s, x) =>
-        s + Number(x.qty),
+      (s,x) => s + x.qty,
       0
     );
 
 }
 
 
-/* =========================================================
-   OPEN CART
-   ========================================================= */
-
-function openCart() {
+function openCart(){
 
   $("cartModal")
     .classList
@@ -937,58 +939,60 @@ function openCart() {
 
 
   $("cartItems").innerHTML =
-
     cart.length
 
-    ? cart.map(
-        (x, i) => `
+      ?
 
-        <div class="row">
+      cart.map(
 
-          <span>
-            ${esc(x.product_name)}
-            —
-            ${esc(x.strength)}
-            ×
-            ${x.qty}
-          </span>
+        (x,i) =>
 
+        '<div class="row">'
 
-          <b>
+        +
 
-            ${peso(
-              x.price *
-              x.qty
-            )}
+        '<span>'
+        + esc(x.product_name)
+        + ' — '
+        + esc(x.strength)
+        + ' × '
+        + x.qty
+        + '</span>'
 
-            <button
-              class="btn secondary"
-              onclick="removeCart(${i})"
-            >
-              ×
-            </button>
+        +
 
-          </b>
+        '<b>'
+        + peso(x.price * x.qty)
 
-        </div>
+        +
 
-        `
+        ' <button'
+        + ' class="btn secondary"'
+        + ' onclick="removeCart('
+        + i
+        + ')"'
+        + '>×</button>'
+
+        +
+
+        '</b>'
+
+        +
+
+        '</div>'
+
       ).join("")
 
-    : `
-      <p class="muted">
-        Cart is empty.
-      </p>
-    `;
+      :
+
+      '<p class="muted">Cart is empty.</p>';
 
 
   $("cartTotal").textContent =
     peso(
       cart.reduce(
-        (s, x) =>
-          s +
-          x.price *
-          x.qty,
+        (s,x) =>
+          s + x.price * x.qty,
         0
       )
     );
@@ -996,34 +1000,20 @@ function openCart() {
 }
 
 
-/* =========================================================
-   REMOVE CART ITEM
-   ========================================================= */
+function removeCart(i){
 
-function removeCart(i) {
-
-  cart.splice(
-    i,
-    1
-  );
-
+  cart.splice(i,1);
 
   localStorage.pepmosaCart =
     JSON.stringify(cart);
 
-
   updateCart();
-
   openCart();
 
 }
 
 
-/* =========================================================
-   CLOSE MODAL
-   ========================================================= */
-
-function closeModal(id) {
+function closeModal(id){
 
   $(id)
     .classList
@@ -1032,26 +1022,15 @@ function closeModal(id) {
 }
 
 
-/* =========================================================
-   CHECKOUT
-   ========================================================= */
+function checkout(){
 
-function checkout() {
+  if(!cart.length){
 
-  if (!cart.length) {
+    return alert("Cart is empty.");
 
-    alert(
-      "Cart is empty."
-    );
-
-    return;
   }
 
-
-  closeModal(
-    "cartModal"
-  );
-
+  closeModal("cartModal");
 
   $("checkoutModal")
     .classList
@@ -1061,20 +1040,19 @@ function checkout() {
 
 
 /* =========================================================
-   PLACE ORDER
+   CHECKOUT
    ========================================================= */
 
-async function placeOrder() {
+async function placeOrder(){
 
-  try {
+  try{
 
-    if (!currentGB) {
+    if(!currentGB){
 
-      alert(
+      return alert(
         "No open Group Buy."
       );
 
-      return;
     }
 
 
@@ -1085,28 +1063,23 @@ async function placeOrder() {
         .toLowerCase();
 
 
-    if (!email) {
+    if(!email){
 
-      alert(
+      return alert(
         "Enter email."
       );
 
-      return;
     }
 
 
-    /* =====================================================
-       CUSTOMER
-       ===================================================== */
-
     const {
-      data: customer,
-      error: ce
-    } = await sb
-      .from("customers")
-      .upsert(
+      data:customer,
+      error:ce
+    } =
+      await sb
+        .from("customers")
+        .upsert({
 
-        {
           email,
 
           customer_name:
@@ -1124,85 +1097,63 @@ async function placeOrder() {
               .value
               .trim()
 
-        },
-
-        {
-          onConflict:
-            "email"
-        }
-
-      )
-      .select()
-      .single();
+        },{
+          onConflict:"email"
+        })
+        .select()
+        .single();
 
 
-    if (ce) {
-      throw ce;
-    }
+    if(ce) throw ce;
 
-
-    /* =====================================================
-       TOTAL
-       ===================================================== */
 
     const total =
       cart.reduce(
-        (s, x) =>
-          s +
-          x.price *
-          x.qty,
+        (s,x) =>
+          s + x.price * x.qty,
         0
       );
 
 
-    /* =====================================================
-       ORDER
-       ===================================================== */
-
     const {
-      data: o,
-      error: oe
-    } = await sb
-      .from("orders")
-      .insert({
+      data:o,
+      error:oe
+    } =
+      await sb
+        .from("orders")
+        .insert({
 
-        gb_number:
-          currentGB.gb_number,
+          gb_number:
+            currentGB.gb_number,
 
-        customer_id:
-          customer.customer_id,
+          customer_id:
+            customer.customer_id,
 
-        email,
+          email,
 
-        total,
+          total,
 
-        payment_status:
-          "PENDING",
+          payment_status:
+            "PENDING",
 
-        shipping_method:
-          $("shippingMethod")
-            .value
-            .trim(),
+          shipping_method:
+            $("shippingMethod")
+              .value
+              .trim(),
 
-        shipping_fee:
-          0
+          shipping_fee:0
 
-      })
-      .select()
-      .single();
-
-
-    if (oe) {
-      throw oe;
-    }
+        })
+        .select()
+        .single();
 
 
-    /* =====================================================
-       ORDER ITEMS
-       ===================================================== */
+    if(oe) throw oe;
+
 
     const rows =
       cart.map(
+
         x => ({
 
           order_id:
@@ -1227,37 +1178,30 @@ async function placeOrder() {
             x.price,
 
           line_total:
-            x.price *
-            x.qty
+            x.price * x.qty
 
         })
+
       );
 
 
-    const {
-      error: ie
-    } = await sb
-      .from("order_items")
-      .insert(rows);
+    const {error:ie} =
+      await sb
+        .from("order_items")
+        .insert(rows);
 
 
-    if (ie) {
-      throw ie;
-    }
+    if(ie) throw ie;
 
-
-    /* =====================================================
-       SUCCESS
-       ===================================================== */
 
     $("checkoutMsg").className =
       "notice success";
 
 
     $("checkoutMsg").textContent =
-      "Order submitted: " +
-      o.order_id +
-      ". Please follow the payment instructions from PEPMOSA.";
+      "Order submitted: "
+      + o.order_id
+      + ". Please follow the payment instructions from PEPMOSA.";
 
 
     cart = [];
@@ -1266,11 +1210,10 @@ async function placeOrder() {
       "pepmosaCart"
     );
 
-
     updateCart();
 
 
-  } catch (e) {
+  }catch(e){
 
     $("checkoutMsg").className =
       "notice error";
@@ -1282,59 +1225,6 @@ async function placeOrder() {
 
 }
 
-
-/* =========================================================
-   HELPERS
-   ========================================================= */
-
-function esc(value) {
-
-  return String(
-    value ?? ""
-  )
-  .replace(
-    /&/g,
-    "&amp;"
-  )
-  .replace(
-    /</g,
-    "&lt;"
-  )
-  .replace(
-    />/g,
-    "&gt;"
-  )
-  .replace(
-    /"/g,
-    "&quot;"
-  )
-  .replace(
-    /'/g,
-    "&#039;"
-  );
-
-}
-
-
-function peso(value) {
-
-  return "₱" +
-    Number(
-      value || 0
-    ).toLocaleString(
-      "en-PH",
-      {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      }
-    );
-
-}
-
-
-/* =========================================================
-   START
-   ========================================================= */
 
 load();
 
