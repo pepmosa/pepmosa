@@ -83,7 +83,24 @@
   .variantRow{grid-template-columns:1fr}
 }
 </style>
-</head>
+</head><style>
+.heroLogo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  overflow: hidden;
+}
+
+.heroLogo img {
+  display: block;
+  width: 85%;
+  max-width: 360px;
+  max-height: 210px;
+  height: auto;
+  object-fit: contain;
+}
+</style>
 <body>
 
 <header>
@@ -102,7 +119,9 @@
 <main class="wrap">
 
 <section class="hero">
-  <div class="heroLogo" id="heroLogo">PEPMOSA</div>
+  <div class="heroLogo">
+  <img src="pepmosa-logo.png" alt="PEPMOSA Logo">
+</div>
 
   <div class="gbPanel">
     <div>
