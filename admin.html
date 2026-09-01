@@ -1086,7 +1086,15 @@ hr{
 <script src="supabase.js"></script>
 
 <script>
-initSupabase();
+/* Initialize PEPMOSA Supabase client before any auth/database calls. */
+if (typeof initSupabase === "function") {
+  initSupabase();
+} else {
+  document.addEventListener("DOMContentLoaded", function(){
+    if (typeof initSupabase === "function") initSupabase();
+  });
+}
+
 
 /* ============================================================
    STATE
@@ -1228,6 +1236,10 @@ async function login(){
   }
 
   try{
+
+    if (typeof sb === "undefined" || !sb || !sb.auth) {
+      throw new Error("Supabase is not initialized. Please refresh the page and try again.");
+    }
 
     const {data,error} =
       await sb.auth.signInWithPassword({
