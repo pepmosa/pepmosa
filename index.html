@@ -138,22 +138,34 @@ body::before{
   blend into the page background.
 */
 
+.heroLogo{
+  position:relative;
+  z-index:2;
+  min-height:380px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+}
+
 .heroLogo img{
   display:block;
-
-  width:min(100%,560px);
+  width:min(115%,680px);
+  max-width:none;
   height:auto;
-
-  max-height:340px;
-
+  max-height:390px;
   object-fit:contain;
 
+  /* blends the white background into the page */
   mix-blend-mode:multiply;
 
+  /* removes the visible white edge */
   filter:
-    drop-shadow(0 12px 18px rgba(120,50,100,.08));
+    contrast(1.08)
+    drop-shadow(0 14px 20px rgba(120,50,100,.10));
 
-  transform:scale(1.08);
+  transform:scale(1.12);
+}
 }
 
 /* =========================================================
