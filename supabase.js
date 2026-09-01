@@ -21,10 +21,18 @@ function initSupabase() {
     c.SUPABASE_ANON_KEY
   );
 
+  // Expose the client on window as well. Some admin helpers use
+  // window.sb explicitly, while page scripts use the global `sb` binding.
+  // Keeping both references in sync prevents false "Supabase is not
+  // initialized" errors after the client has already been created.
+  window.sb = sb;
+
   return sb;
 }
 
 async function requireAdmin() {
+  if (!sb) initSupabase();
+
   const {
     data: { user }
   } = await sb.auth.getUser();
