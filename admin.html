@@ -1,27 +1,2326 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PEPMOSA • Admin</title><link rel="stylesheet" href="style.css"></head><body>
-<div id="login" class="login"><div class="loginBox"><div class="eyebrow">PEPMOSA</div><h1>ADMIN CONTROL CENTER</h1><p class="muted">Sign in with your Supabase admin account.</p><input id="email" class="input" placeholder="Email"><br><br><input id="password" class="input" type="password" placeholder="Password"><div class="actions"><button class="btn primary wide" onclick="login()">LOGIN</button></div><div id="msg"></div></div></div>
-<div id="app" style="display:none"><header><a class="brand" href="index.html"><span class="logoMark">P</span>PEPMOSA ADMIN</a><button class="cart" onclick="logout()">LOG OUT</button></header><main class="wrap"><div class="sectionHead"><div><div class="eyebrow">ADMIN CONTROL CENTER</div><h1>Dashboard</h1></div></div><div class="tabs"><button class="active" onclick="tab('overview',this)">OVERVIEW</button><button onclick="tab('gb',this)">GROUP BUY</button><button onclick="tab('products',this)">PRODUCTS</button><button onclick="tab('kit',this)">KIT COMPLETION</button><button onclick="tab('orders',this)">ORDERS</button></div>
-<section id="overview" class="panel active"><div class="adminGrid" id="stats"></div></section>
-<section id="gb" class="panel"><div class="card"><h2>Group Buy Settings</h2><div class="formGrid"><div class="field"><label>GB Number</label><input id="gbNumber" placeholder="GB-001"></div><div class="field"><label>Customer-facing Name</label><input id="gbName" placeholder="SEPTEMBER GROUP BUY"></div><div class="field"><label>Status</label><select id="gbStatus"><option>OPEN</option><option>CLOSED</option></select></div><div class="field"><label>Admin Fee</label><input id="gbFee" type="number" value="0"></div></div><div class="actions"><button class="btn primary" onclick="saveGB()">SAVE GROUP BUY</button></div></div><div class="card" style="margin-top:12px"><h3>Existing Group Buys</h3><div id="gbList"></div></div></section>
-<section id="products" class="panel"><div class="card"><h2>Add Product</h2><div class="formGrid"><div class="field"><label>Product ID</label><input id="pid"></div><div class="field"><label>Product Name</label><input id="pname"></div><div class="field"><label>Category</label><input id="pcat"></div><div class="field"><label>Image URL</label><input id="pimg"></div><div class="field full"><label>Description</label><textarea id="pdesc"></textarea></div></div><div class="actions"><button class="btn primary" onclick="saveProduct()">SAVE PRODUCT</button></div></div><div class="card" style="margin-top:12px"><h3>Products & Variants</h3><div id="productList"></div></div></section>
-<section id="kit" class="panel"><div class="card"><h2>KIT COMPLETION</h2><p class="muted">This is intentionally separate from GB minimum quantity. Kit completion allows 1 pc (one vial) when only one vial is needed.</p><div class="formGrid"><div class="field"><label>GB Number</label><input id="kitGB"></div><div class="field"><label>Variant ID</label><input id="kitVariant"></div><div class="field"><label>Available Remaining Quantity</label><input id="kitRemaining" type="number" min="0"></div><div class="field"><label>Kit Size</label><input id="kitSize" type="number" min="1" value="10"></div></div><div class="actions"><button class="btn primary" onclick="saveKit()">SAVE KIT COMPLETION STOCK</button></div></div><div class="card" style="margin-top:12px"><div id="kitList"></div></div></section>
-<section id="orders" class="panel"><div class="card"><h2>Orders</h2><div class="tableWrap"><table><thead><tr><th>ORDER</th><th>GB</th><th>EMAIL</th><th>TOTAL</th><th>PAYMENT</th><th>CREATED</th></tr></thead><tbody id="ordersBody"></tbody></table></div></div></section>
-</main></div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script><script src="supabase.js"></script>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PEPMOSA • Admin</title>
+<link rel="stylesheet" href="style.css">
+
+<style>
+:root{
+  --pink:#d92b91;
+  --pink2:#f6d5ea;
+  --ink:#25182a;
+  --muted:#766b79;
+  --bg:#fff8fc;
+  --card:#fff;
+  --line:#ead9e5;
+  --green:#17834b;
+  --red:#c92d45;
+}
+
+body{
+  background:
+    radial-gradient(circle at 10% 10%,rgba(247,190,224,.28),transparent 28%),
+    radial-gradient(circle at 90% 20%,rgba(220,198,255,.28),transparent 30%),
+    var(--bg);
+}
+
+.adminWrap{
+  width:min(1400px,94%);
+  margin:30px auto 70px;
+}
+
+.adminHeader{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:20px;
+  margin-bottom:24px;
+}
+
+.adminHeader h1{
+  margin:0;
+}
+
+.adminHeader p{
+  margin:5px 0 0;
+  color:var(--muted);
+}
+
+.tabs{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:22px;
+}
+
+.tabBtn{
+  border:1px solid var(--line);
+  background:#fff;
+  padding:10px 16px;
+  border-radius:999px;
+  cursor:pointer;
+  font-weight:700;
+}
+
+.tabBtn.active{
+  background:var(--pink);
+  color:#fff;
+  border-color:var(--pink);
+}
+
+.panel{
+  display:none;
+}
+
+.panel.active{
+  display:block;
+}
+
+.adminCard{
+  background:rgba(255,255,255,.94);
+  border:1px solid var(--line);
+  border-radius:20px;
+  padding:22px;
+  margin-bottom:20px;
+  box-shadow:0 12px 35px rgba(170,90,140,.08);
+}
+
+.adminCard h2,
+.adminCard h3{
+  margin-top:0;
+}
+
+.formGrid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+}
+
+.field{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+.field.full{
+  grid-column:1/-1;
+}
+
+.field label{
+  font-size:13px;
+  font-weight:800;
+}
+
+.field input,
+.field select,
+.field textarea{
+  width:100%;
+  box-sizing:border-box;
+  border:1px solid var(--line);
+  border-radius:11px;
+  padding:11px 12px;
+  background:#fff;
+}
+
+.field textarea{
+  min-height:90px;
+  resize:vertical;
+}
+
+.actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:15px;
+}
+
+.btn{
+  border:0;
+  border-radius:10px;
+  padding:10px 15px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.btn.primary{
+  background:var(--pink);
+  color:#fff;
+}
+
+.btn.secondary{
+  background:#fff;
+  color:var(--ink);
+  border:1px solid var(--line);
+}
+
+.btn.success{
+  background:#e4f7ed;
+  color:var(--green);
+}
+
+.btn.danger{
+  background:#fde8ec;
+  color:var(--red);
+}
+
+.btn.dark{
+  background:#241d25;
+  color:#fff;
+}
+
+.btn:disabled{
+  opacity:.5;
+  cursor:not-allowed;
+}
+
+.tableWrap{
+  overflow:auto;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:750px;
+}
+
+th,td{
+  text-align:left;
+  padding:11px;
+  border-bottom:1px solid var(--line);
+  vertical-align:top;
+}
+
+th{
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+
+.badge{
+  display:inline-block;
+  padding:5px 9px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:800;
+}
+
+.badge.open,
+.badge.approved,
+.badge.green{
+  background:#e4f7ed;
+  color:var(--green);
+}
+
+.badge.pending{
+  background:#fff2cf;
+  color:#8b6500;
+}
+
+.badge.rejected,
+.badge.red{
+  background:#fde8ec;
+  color:var(--red);
+}
+
+.badge.closed{
+  background:#eee9ed;
+  color:#655b64;
+}
+
+.categoryRow{
+  display:grid;
+  grid-template-columns:1fr 160px auto;
+  gap:10px;
+  align-items:center;
+  padding:10px 0;
+  border-bottom:1px solid var(--line);
+}
+
+.searchBox{
+  margin-bottom:15px;
+}
+
+.searchBox input{
+  width:100%;
+  box-sizing:border-box;
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:11px;
+}
+
+.notice{
+  padding:12px 14px;
+  border-radius:11px;
+  background:#fff4fa;
+  margin:12px 0;
+}
+
+.notice.success{
+  background:#eaf8f0;
+  color:#176f43;
+}
+
+.notice.error{
+  background:#fff0f2;
+  color:#a3263b;
+}
+
+.statGrid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:14px;
+  margin-bottom:20px;
+}
+
+.stat{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:17px;
+  padding:18px;
+}
+
+.stat b{
+  display:block;
+  font-size:26px;
+  margin-top:5px;
+}
+
+.orderBox{
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:15px;
+  margin-top:12px;
+}
+
+.orderItem{
+  padding:8px 0;
+  border-bottom:1px dashed var(--line);
+}
+
+.orderItem:last-child{
+  border-bottom:0;
+}
+
+.small{
+  font-size:12px;
+  color:var(--muted);
+}
+
+.shipmentStatus{
+  font-size:18px;
+  font-weight:900;
+}
+
+@media(max-width:800px){
+  .formGrid,
+  .statGrid{
+    grid-template-columns:1fr;
+  }
+
+  .categoryRow{
+    grid-template-columns:1fr;
+  }
+
+  .adminHeader{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <a class="brand" href="index.html">
+    <span class="logoMark">P</span>PEPMOSA
+  </a>
+
+  <nav class="nav">
+    <a href="index.html">HOME</a>
+    <a href="calculator.html">CALCULATOR</a>
+    <a href="protocols.html">PROTOCOLS</a>
+    <a href="track.html">TRACK</a>
+    <a href="coa.html">COA</a>
+  </nav>
+</header>
+
+<main class="adminWrap">
+
+  <div class="adminHeader">
+    <div>
+      <div class="eyebrow">PEPMOSA ADMIN</div>
+      <h1>Control Panel</h1>
+      <p id="adminEmail">Checking administrator access...</p>
+    </div>
+
+    <button class="btn dark" onclick="logout()">LOG OUT</button>
+  </div>
+
+  <div id="globalMsg"></div>
+
+  <div class="tabs">
+
+    <button class="tabBtn active"
+      onclick="showTab('gbPanel',this)">
+      GROUP BUY
+    </button>
+
+    <button class="tabBtn"
+      onclick="showTab('categoriesPanel',this)">
+      CATEGORIES
+    </button>
+
+    <button class="tabBtn"
+      onclick="showTab('productsPanel',this)">
+      PRODUCTS
+    </button>
+
+    <button class="tabBtn"
+      onclick="showTab('paymentsPanel',this)">
+      ADMIN FEE
+    </button>
+
+    <button class="tabBtn"
+      onclick="showTab('ordersPanel',this)">
+      ORDERS
+    </button>
+
+    <button class="tabBtn"
+      onclick="showTab('trackingPanel',this)">
+      CONSOLIDATED TRACKING
+    </button>
+
+  </div>
+
+
+  <!-- ===================================================== -->
+  <!-- GROUP BUY -->
+  <!-- ===================================================== -->
+
+  <section id="gbPanel" class="panel active">
+
+    <div class="adminCard">
+
+      <h2>Create / Update Group Buy</h2>
+
+      <input type="hidden" id="gbId">
+
+      <div class="formGrid">
+
+        <div class="field">
+          <label>GB Number</label>
+          <input id="gbNumber" placeholder="e.g. GB-001">
+        </div>
+
+        <div class="field">
+          <label>Customer-Facing Name</label>
+          <input id="gbName" placeholder="e.g. September Group Buy">
+        </div>
+
+        <div class="field">
+          <label>Admin Fee</label>
+          <input id="gbAdminFee" type="number" min="0" step="0.01">
+        </div>
+
+        <div class="field">
+          <label>Status</label>
+          <select id="gbStatus">
+            <option value="OPEN">OPEN</option>
+            <option value="CLOSED">CLOSED</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Admin Fee QR URL</label>
+          <input id="gbAdminQr" placeholder="QR image URL">
+        </div>
+
+        <div class="field">
+          <label>Final Payment QR URL</label>
+          <input id="gbFinalQr" placeholder="QR image URL">
+        </div>
+
+        <div class="field">
+          <label>Kit Completion</label>
+          <select id="gbKitStatus">
+            <option value="OPEN">OPEN</option>
+            <option value="CLOSED">CLOSED</option>
+          </select>
+        </div>
+
+      </div>
+
+      <div class="actions">
+
+        <button class="btn primary"
+          onclick="saveGB()">
+          SAVE GROUP BUY
+        </button>
+
+        <button class="btn secondary"
+          onclick="clearGBForm()">
+          NEW
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <div class="adminCard">
+
+      <h2>Current Group Buys</h2>
+
+      <div id="gbList">
+        Loading...
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ===================================================== -->
+  <!-- CATEGORIES -->
+  <!-- ===================================================== -->
+
+  <section id="categoriesPanel" class="panel">
+
+    <div class="adminCard">
+
+      <h2>Product Categories</h2>
+
+      <div class="formGrid">
+
+        <div class="field">
+          <label>New Category</label>
+          <input id="newCategory"
+            placeholder="e.g. Peptides">
+        </div>
+
+      </div>
+
+      <div class="actions">
+
+        <button class="btn primary"
+          onclick="addCategory()">
+          ADD CATEGORY
+        </button>
+
+      </div>
+
+      <div id="categoryList">
+        Loading...
+      </div>
+
+    </div>
+
+
+    <div class="adminCard">
+
+      <h2>GB Category Minimums</h2>
+
+      <p class="small">
+        Minimum quantity is set ONCE per category for the selected GB.
+        It applies to every product/variant inside that category.
+      </p>
+
+      <div class="field">
+
+        <label>Select GB</label>
+
+        <select id="minimumGB"
+          onchange="loadGBCategoryMinimums()">
+        </select>
+
+      </div>
+
+      <div id="categoryMinimums">
+        Select a Group Buy.
+      </div>
+
+      <div class="actions">
+
+        <button class="btn primary"
+          onclick="saveCategoryMinimums()">
+          SAVE CATEGORY MINIMUMS
+        </button>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ===================================================== -->
+  <!-- PRODUCTS -->
+  <!-- ===================================================== -->
+
+  <section id="productsPanel" class="panel">
+
+    <div class="adminCard">
+
+      <h2>Add Product</h2>
+
+      <div class="formGrid">
+
+        <div class="field">
+          <label>Product ID</label>
+          <input id="productId"
+            placeholder="e.g. tirz15">
+        </div>
+
+        <div class="field">
+          <label>Product Name</label>
+          <input id="productName"
+            placeholder="Product name">
+        </div>
+
+        <div class="field">
+          <label>Category</label>
+          <select id="productCategory"></select>
+        </div>
+
+        <div class="field">
+          <label>Image URL</label>
+          <input id="productImage"
+            placeholder="Image URL">
+        </div>
+
+        <div class="field full">
+          <label>Description</label>
+          <textarea id="productDescription"></textarea>
+        </div>
+
+      </div>
+
+      <div class="actions">
+
+        <button class="btn primary"
+          onclick="addProduct()">
+          ADD PRODUCT
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <div class="adminCard">
+
+      <h2>Products & Variants</h2>
+
+      <div class="searchBox">
+        <input id="productSearch"
+          placeholder="Search products..."
+          oninput="renderAdminProducts()">
+      </div>
+
+      <div id="adminProducts">
+        Loading...
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ===================================================== -->
+  <!-- ADMIN FEE -->
+  <!-- ===================================================== -->
+
+  <section id="paymentsPanel" class="panel">
+
+    <div class="adminCard">
+
+      <h2>Admin Fee Payments</h2>
+
+      <div class="searchBox">
+
+        <input id="paymentSearch"
+          placeholder="Search by email..."
+          oninput="renderPayments()">
+
+      </div>
+
+      <div id="paymentList">
+        Loading...
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ===================================================== -->
+  <!-- ORDERS -->
+  <!-- ===================================================== -->
+
+  <section id="ordersPanel" class="panel">
+
+    <div class="adminCard">
+
+      <h2>Customer Orders</h2>
+
+      <p class="small">
+        Orders are searched by EMAIL. Individual Order # records remain separate.
+      </p>
+
+      <div class="searchBox">
+
+        <input id="orderSearch"
+          placeholder="Enter customer email..."
+          onkeydown="if(event.key==='Enter')searchOrders()">
+
+      </div>
+
+      <div class="actions">
+
+        <button class="btn primary"
+          onclick="searchOrders()">
+          SEARCH
+        </button>
+
+      </div>
+
+      <div id="ordersResult"></div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ===================================================== -->
+  <!-- CONSOLIDATED TRACKING -->
+  <!-- ===================================================== -->
+
+  <section id="trackingPanel" class="panel">
+
+    <div class="adminCard">
+
+      <h2>Consolidated Shipment Tracking</h2>
+
+      <p class="small">
+        Tracking is based on customer EMAIL, not individual Order #.
+        Orders remain individually recorded but can be grouped into one shipment.
+      </p>
+
+      <div class="searchBox">
+
+        <input id="trackingSearch"
+          placeholder="Customer email..."
+          onkeydown="if(event.key==='Enter')searchShipment()">
+
+      </div>
+
+      <div class="actions">
+
+        <button class="btn primary"
+          onclick="searchShipment()">
+          SEARCH EMAIL
+        </button>
+
+      </div>
+
+      <div id="shipmentResult"></div>
+
+    </div>
+
+  </section>
+
+</main>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="supabase.js"></script>
+
 <script>
-initSupabase();
-const $=id=>document.getElementById(id);
-async function login(){try{const r=await sb.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(r.error)throw r.error;await requireAdmin();$("login").style.display="none";$("app").style.display="block";loadAll()}catch(e){$("msg").className="notice error";$("msg").textContent=e.message}}
-async function logout(){await sb.auth.signOut();location.reload()}
-function tab(id,b){document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));$(id).classList.add("active");b.classList.add("active")}
-async function loadAll(){loadStats();loadGB();loadProducts();loadKits();loadOrders()}
-async function loadStats(){const [g,o,k]=await Promise.all([sb.from("group_buys").select("*",{count:"exact",head:true}),sb.from("orders").select("*",{count:"exact",head:true}),sb.from("kit_inventory").select("*",{count:"exact",head:true})]);$("stats").innerHTML='<div class="stat"><div class="muted">Group Buys</div><div class="num">'+(g.count||0)+'</div></div><div class="stat"><div class="muted">Orders</div><div class="num">'+(o.count||0)+'</div></div><div class="stat"><div class="muted">Kit Completion SKUs</div><div class="num">'+(k.count||0)+'</div></div>'}
-async function saveGB(){const payload={gb_number:$("gbNumber").value.trim(),customer_facing_name:$("gbName").value.trim(),status:$("gbStatus").value,admin_fee:Number($("gbFee").value||0)};const r=await sb.from("group_buys").upsert(payload,{onConflict:"gb_number"});if(r.error)return alert(r.error.message);loadGB();alert("Group Buy saved.")}
-async function loadGB(){const r=await sb.from("group_buys").select("*").order("created_at",{ascending:false});$("gbList").innerHTML=(r.data||[]).map(x=>'<div class="row"><span><b>'+esc(x.customer_facing_name||x.gb_number)+'</b><br><small>'+esc(x.gb_number)+'</small></span><span class="status '+(x.status==="OPEN"?"open":"closed")+'">'+esc(x.status)+'</span></div>').join("")||"No GBs yet."}
-async function saveProduct(){const p={product_id:$("pid").value.trim(),product_name:$("pname").value.trim(),category:$("pcat").value.trim(),description:$("pdesc").value.trim(),image_url:$("pimg").value.trim(),active:true};const r=await sb.from("products").upsert(p,{onConflict:"product_id"});if(r.error)return alert(r.error.message);loadProducts();alert("Product saved.")}
-async function loadProducts(){const r=await sb.from("products").select("*,product_variants(*)").order("product_name");$("productList").innerHTML=(r.data||[]).map(p=>'<div class="card" style="margin:8px 0"><b>'+esc(p.product_name)+'</b> <span class="muted">'+esc(p.category||"")+'</span><div>'+((p.product_variants||[]).map(v=>'<div class="row"><span>'+esc(v.variant_id)+' — '+esc(v.strength)+'</span><span>'+peso(v.price)+'</span></div>').join("")||'<span class="muted">No variants yet.</span>')+'</div></div>').join("")}
-async function saveKit(){const payload={gb_number:$("kitGB").value.trim(),variant_id:$("kitVariant").value.trim(),remaining_qty:Number($("kitRemaining").value||0),kit_size:Number($("kitSize").value||10)};const r=await sb.from("kit_inventory").upsert(payload,{onConflict:"gb_number,variant_id"});if(r.error)return alert(r.error.message);loadKits();alert("Kit completion stock saved.")}
-async function loadKits(){const r=await sb.from("kit_inventory").select("*").order("gb_number");$("kitList").innerHTML=(r.data||[]).map(x=>'<div class="row kitBox"><span>'+esc(x.gb_number)+' / '+esc(x.variant_id)+'</span><b>Remaining: '+x.remaining_qty+' pc</b></div>').join("")||"No kit completion stock yet."}
-async function loadOrders(){const r=await sb.from("orders").select("*").order("created_at",{ascending:false}).limit(100);$("ordersBody").innerHTML=(r.data||[]).map(x=>'<tr><td>'+esc(x.order_id)+'</td><td>'+esc(x.gb_number)+'</td><td>'+esc(x.email)+'</td><td>'+peso(x.total)+'</td><td>'+esc(x.payment_status)+'</td><td>'+new Date(x.created_at).toLocaleString()+'</td></tr>').join("")}
-(async()=>{const {data:{user}}=await sb.auth.getUser();if(user){try{await requireAdmin();$("login").style.display="none";$("app").style.display="block";loadAll()}catch(e){}}})();
-</script></body></html>
+
+let categories = [];
+let groupBuys = [];
+let products = [];
+let currentShipment = null;
+
+const TRACKING_STATUSES = [
+  "ORDER RECEIVED",
+  "PAYMENT CONFIRMED",
+  "ORDER PROCESSING",
+  "IN TRANSIT TO THE PHILIPPINES",
+  "ARRIVED IN THE PHILIPPINES",
+  "RECEIVED AT WAREHOUSE",
+  "PACKING & LABELLING",
+  "HANDED OVER TO LOCAL COURIER",
+  "DELIVERED"
+];
+
+function $(id){
+  return document.getElementById(id);
+}
+
+function esc(v){
+  return String(v ?? "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
+
+function peso(v){
+  return "₱" + Number(v || 0).toLocaleString("en-PH",{
+    minimumFractionDigits:2,
+    maximumFractionDigits:2
+  });
+}
+
+function showMessage(text,type=""){
+  $("globalMsg").innerHTML =
+    `<div class="notice ${type}">${esc(text)}</div>`;
+
+  setTimeout(()=>{
+    $("globalMsg").innerHTML="";
+  },5000);
+}
+
+function showTab(id,button){
+
+  document.querySelectorAll(".panel")
+    .forEach(x=>x.classList.remove("active"));
+
+  document.querySelectorAll(".tabBtn")
+    .forEach(x=>x.classList.remove("active"));
+
+  $(id).classList.add("active");
+
+  if(button){
+    button.classList.add("active");
+  }
+}
+
+
+/* =========================================================
+   AUTH
+========================================================= */
+
+async function checkAdmin(){
+
+  try{
+
+    const {data,error} =
+      await sb.auth.getUser();
+
+    if(error) throw error;
+
+    const user=data.user;
+
+    if(!user){
+      location.href="index.html";
+      return;
+    }
+
+    $("adminEmail").textContent =
+      "Signed in as " + user.email;
+
+    const {data:profile,error:pe} =
+      await sb
+        .from("profiles")
+        .select("email,is_admin")
+        .eq("id",user.id)
+        .maybeSingle();
+
+    if(pe) throw pe;
+
+    if(!profile || !profile.is_admin){
+
+      document.body.innerHTML =
+        `<div style="padding:50px;text-align:center">
+          <h1>Access Denied</h1>
+          <p>This account is not an administrator.</p>
+        </div>`;
+
+      return;
+    }
+
+    await loadEverything();
+
+  }catch(e){
+
+    console.error(e);
+
+    $("adminEmail").textContent =
+      "Unable to verify administrator access.";
+
+    showMessage(e.message,"error");
+  }
+}
+
+
+async function logout(){
+
+  await sb.auth.signOut();
+
+  location.href="index.html";
+}
+
+
+/* =========================================================
+   LOAD EVERYTHING
+========================================================= */
+
+async function loadEverything(){
+
+  await Promise.all([
+    loadGBs(),
+    loadCategories(),
+    loadProducts(),
+    loadPayments()
+  ]);
+
+}
+
+
+/* =========================================================
+   GROUP BUY
+========================================================= */
+
+async function loadGBs(){
+
+  const {data,error} =
+    await sb
+      .from("group_buys")
+      .select("*")
+      .order("created_at",{ascending:false});
+
+  if(error) throw error;
+
+  groupBuys=data || [];
+
+  renderGBs();
+
+  $("minimumGB").innerHTML =
+    `<option value="">Select GB</option>` +
+    groupBuys.map(g=>
+      `<option value="${esc(g.gb_number)}">
+        ${esc(g.gb_number)} — ${esc(g.customer_facing_name || "")}
+      </option>`
+    ).join("");
+}
+
+
+function renderGBs(){
+
+  if(!groupBuys.length){
+
+    $("gbList").innerHTML =
+      `<div class="notice">No Group Buys yet.</div>`;
+
+    return;
+  }
+
+  $("gbList").innerHTML = groupBuys.map(g=>{
+
+    const badge =
+      g.status==="OPEN"
+        ? "open"
+        : "closed";
+
+    return `
+      <div class="orderBox">
+
+        <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
+
+          <div>
+            <h3>${esc(g.customer_facing_name || g.gb_number)}</h3>
+
+            <div class="small">
+              ${esc(g.gb_number)}
+            </div>
+
+          </div>
+
+          <span class="badge ${badge}">
+            ${esc(g.status)}
+          </span>
+
+        </div>
+
+        <p>
+          Admin Fee:
+          <b>${peso(g.admin_fee)}</b>
+        </p>
+
+        <p class="small">
+          Kit completion:
+          ${esc(g.kit_completion_status)}
+        </p>
+
+        <div class="actions">
+
+          <button class="btn secondary"
+            onclick="editGB('${esc(g.gb_number)}')">
+            EDIT
+          </button>
+
+        </div>
+
+      </div>
+    `;
+
+  }).join("");
+}
+
+
+function clearGBForm(){
+
+  $("gbId").value="";
+  $("gbNumber").value="";
+  $("gbName").value="";
+  $("gbAdminFee").value="";
+  $("gbStatus").value="OPEN";
+  $("gbAdminQr").value="";
+  $("gbFinalQr").value="";
+  $("gbKitStatus").value="OPEN";
+
+}
+
+
+function editGB(number){
+
+  const g=
+    groupBuys.find(x=>x.gb_number===number);
+
+  if(!g) return;
+
+  $("gbId").value=g.gb_id;
+  $("gbNumber").value=g.gb_number;
+  $("gbName").value=g.customer_facing_name || "";
+  $("gbAdminFee").value=g.admin_fee || 0;
+  $("gbStatus").value=g.status;
+  $("gbAdminQr").value=g.admin_fee_qr_url || "";
+  $("gbFinalQr").value=g.final_payment_qr_url || "";
+  $("gbKitStatus").value=g.kit_completion_status;
+
+  showTab("gbPanel",document.querySelector(".tabBtn"));
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+
+async function saveGB(){
+
+  try{
+
+    const gbNumber=$("gbNumber").value.trim();
+
+    if(!gbNumber){
+      return showMessage("GB Number is required.","error");
+    }
+
+    const payload={
+      gb_number:gbNumber,
+      customer_facing_name:$("gbName").value.trim(),
+      status:$("gbStatus").value,
+      admin_fee:Number($("gbAdminFee").value||0),
+      admin_fee_qr_url:$("gbAdminQr").value.trim(),
+      final_payment_qr_url:$("gbFinalQr").value.trim(),
+      kit_completion_status:$("gbKitStatus").value
+    };
+
+    const id=$("gbId").value;
+
+    let result;
+
+    if(id){
+
+      result=await sb
+        .from("group_buys")
+        .update(payload)
+        .eq("gb_id",id);
+
+    }else{
+
+      result=await sb
+        .from("group_buys")
+        .insert(payload);
+
+    }
+
+    if(result.error) throw result.error;
+
+    showMessage("Group Buy saved.","success");
+
+    clearGBForm();
+
+    await loadGBs();
+
+  }catch(e){
+
+    showMessage(e.message,"error");
+
+  }
+}
+
+
+/* =========================================================
+   CATEGORIES
+========================================================= */
+
+async function loadCategories(){
+
+  const {data,error} =
+    await sb
+      .from("categories")
+      .select("*")
+      .order("category_name");
+
+  if(error) throw error;
+
+  categories=data || [];
+
+  renderCategories();
+
+  $("productCategory").innerHTML =
+    `<option value="">Select category</option>`+
+    categories
+      .filter(c=>c.active)
+      .map(c=>
+        `<option value="${esc(c.category_name)}">
+          ${esc(c.category_name)}
+        </option>`
+      ).join("");
+}
+
+
+function renderCategories(){
+
+  if(!categories.length){
+
+    $("categoryList").innerHTML =
+      `<div class="notice">No categories yet.</div>`;
+
+    return;
+  }
+
+  $("categoryList").innerHTML =
+    categories.map(c=>`
+
+      <div class="categoryRow">
+
+        <b>${esc(c.category_name)}</b>
+
+        <span class="badge ${c.active?'green':'red'}">
+          ${c.active?'ACTIVE':'INACTIVE'}
+        </span>
+
+        <button class="btn secondary"
+          onclick="toggleCategory('${esc(c.category_name)}',${!c.active})">
+          ${c.active?'DISABLE':'ENABLE'}
+        </button>
+
+      </div>
+
+    `).join("");
+}
+
+
+async function addCategory(){
+
+  const name=$("newCategory").value.trim();
+
+  if(!name){
+    return showMessage("Enter a category name.","error");
+  }
+
+  const {error}=await sb
+    .from("categories")
+    .insert({
+      category_name:name,
+      active:true
+    });
+
+  if(error) return showMessage(error.message,"error");
+
+  $("newCategory").value="";
+
+  await loadCategories();
+
+  showMessage("Category added.","success");
+}
+
+
+async function toggleCategory(name,active){
+
+  const {error}=await sb
+    .from("categories")
+    .update({active})
+    .eq("category_name",name);
+
+  if(error) return showMessage(error.message,"error");
+
+  await loadCategories();
+}
+
+
+/* =========================================================
+   CATEGORY MINIMUMS
+========================================================= */
+
+async function loadGBCategoryMinimums(){
+
+  const gb=$("minimumGB").value;
+
+  if(!gb){
+
+    $("categoryMinimums").innerHTML =
+      "Select a Group Buy.";
+
+    return;
+  }
+
+  const {data,error} =
+    await sb
+      .from("gb_category_settings")
+      .select("*")
+      .eq("gb_number",gb);
+
+  if(error) throw error;
+
+  const existing=data || [];
+
+  $("categoryMinimums").innerHTML =
+    categories
+      .filter(c=>c.active)
+      .map(c=>{
+
+        const row=
+          existing.find(x=>
+            x.category_name===c.category_name
+          );
+
+        return `
+          <div class="categoryRow">
+
+            <b>${esc(c.category_name)}</b>
+
+            <input
+              class="categoryMinInput"
+              data-category="${esc(c.category_name)}"
+              type="number"
+              min="1"
+              value="${row ? Number(row.minimum_qty) : 1}"
+            >
+
+            <span class="small">
+              pcs minimum
+            </span>
+
+          </div>
+        `;
+
+      }).join("");
+}
+
+
+async function saveCategoryMinimums(){
+
+  const gb=$("minimumGB").value;
+
+  if(!gb){
+    return showMessage("Select a Group Buy first.","error");
+  }
+
+  try{
+
+    const inputs=
+      document.querySelectorAll(".categoryMinInput");
+
+    for(const input of inputs){
+
+      const category=
+        input.dataset.category;
+
+      const minimum=
+        Math.max(1,Number(input.value||1));
+
+      const {error}=await sb
+        .from("gb_category_settings")
+        .upsert({
+          gb_number:gb,
+          category_name:category,
+          minimum_qty:minimum
+        },{
+          onConflict:"gb_number,category_name"
+        });
+
+      if(error) throw error;
+    }
+
+    showMessage(
+      "Category minimums saved.",
+      "success"
+    );
+
+  }catch(e){
+
+    showMessage(e.message,"error");
+
+  }
+}
+
+
+/* =========================================================
+   PRODUCTS
+========================================================= */
+
+async function loadProducts(){
+
+  const {data,error} =
+    await sb
+      .from("products")
+      .select("*,product_variants(*)")
+      .order("product_name");
+
+  if(error) throw error;
+
+  products=data || [];
+
+  renderAdminProducts();
+}
+
+
+function renderAdminProducts(){
+
+  const q=
+    ($("productSearch").value||"")
+      .toLowerCase();
+
+  const arr=
+    products.filter(p=>
+      (
+        p.product_name+
+        " "+
+        (p.category||"")
+      ).toLowerCase().includes(q)
+    );
+
+  if(!arr.length){
+
+    $("adminProducts").innerHTML =
+      `<div class="notice">No products found.</div>`;
+
+    return;
+  }
+
+  $("adminProducts").innerHTML =
+    arr.map(p=>`
+
+      <div class="orderBox">
+
+        <div style="display:flex;justify-content:space-between;gap:15px">
+
+          <div>
+
+            <h3>${esc(p.product_name)}</h3>
+
+            <div class="small">
+              ID: ${esc(p.product_id)}
+            </div>
+
+            <div class="small">
+              Category: ${esc(p.category||"")}
+            </div>
+
+          </div>
+
+          <span class="badge ${p.active?'green':'red'}">
+            ${p.active?'ACTIVE':'INACTIVE'}
+          </span>
+
+        </div>
+
+        <p class="small">
+          ${esc(p.description||"")}
+        </p>
+
+        <h4>Variants</h4>
+
+        ${
+          (p.product_variants||[]).length
+          ?
+          (p.product_variants||[]).map(v=>`
+
+            <div class="categoryRow">
+
+              <div>
+                <b>${esc(v.strength)}</b>
+                <div class="small">
+                  ${esc(v.variant_id)}
+                </div>
+              </div>
+
+              <b>${peso(v.price)}</b>
+
+              <span class="badge ${v.active?'green':'red'}">
+                ${v.active?'ACTIVE':'INACTIVE'}
+              </span>
+
+            </div>
+
+          `).join("")
+          :
+          `<div class="small">No variants yet.</div>`
+        }
+
+        <div class="actions">
+
+          <button class="btn secondary"
+            onclick="addVariantPrompt('${esc(p.product_id)}')">
+            ADD VARIANT
+          </button>
+
+          <button class="btn ${p.active?'danger':'success'}"
+            onclick="toggleProduct('${esc(p.product_id)}',${!p.active})">
+            ${p.active?'DISABLE':'ENABLE'}
+          </button>
+
+        </div>
+
+      </div>
+
+    `).join("");
+}
+
+
+async function addProduct(){
+
+  const id=$("productId").value.trim();
+  const name=$("productName").value.trim();
+  const category=$("productCategory").value;
+
+  if(!id || !name || !category){
+
+    return showMessage(
+      "Product ID, name and category are required.",
+      "error"
+    );
+
+  }
+
+  const {error}=await sb
+    .from("products")
+    .insert({
+      product_id:id,
+      product_name:name,
+      category,
+      description:$("productDescription").value.trim(),
+      image_url:$("productImage").value.trim(),
+      active:true
+    });
+
+  if(error) return showMessage(error.message,"error");
+
+  $("productId").value="";
+  $("productName").value="";
+  $("productDescription").value="";
+  $("productImage").value="";
+
+  await loadProducts();
+
+  showMessage("Product added.","success");
+}
+
+
+async function toggleProduct(id,active){
+
+  const {error}=await sb
+    .from("products")
+    .update({active})
+    .eq("product_id",id);
+
+  if(error) return showMessage(error.message,"error");
+
+  await loadProducts();
+}
+
+
+async function addVariantPrompt(productId){
+
+  const strength=
+    prompt("Variant / strength:");
+
+  if(!strength) return;
+
+  const price=
+    prompt("Price:");
+
+  if(price===null) return;
+
+  const variantId=
+    prompt(
+      "Variant ID:",
+      productId+"-"+strength
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g,"-")
+    );
+
+  if(!variantId) return;
+
+  const {error}=await sb
+    .from("product_variants")
+    .insert({
+      variant_id:variantId,
+      product_id:productId,
+      strength,
+      price:Number(price||0),
+      active:true
+    });
+
+  if(error) return showMessage(error.message,"error");
+
+  await loadProducts();
+
+  showMessage("Variant added.","success");
+}
+
+
+/* =========================================================
+   ADMIN FEE
+========================================================= */
+
+let payments=[];
+
+
+async function loadPayments(){
+
+  const {data,error} =
+    await sb
+      .from("gb_customer_access")
+      .select("*")
+      .order("created_at",{ascending:false});
+
+  if(error) throw error;
+
+  payments=data || [];
+
+  renderPayments();
+}
+
+
+function renderPayments(){
+
+  const q=
+    ($("paymentSearch").value||"")
+      .toLowerCase();
+
+  const arr=
+    payments.filter(x=>
+      (
+        x.email+
+        " "+
+        (x.gb_number||"")+
+        " "+
+        (x.payment_reference||"")
+      ).toLowerCase().includes(q)
+    );
+
+  if(!arr.length){
+
+    $("paymentList").innerHTML =
+      `<div class="notice">
+        No admin-fee requests yet.
+      </div>`;
+
+    return;
+  }
+
+  $("paymentList").innerHTML =
+    arr.map(x=>{
+
+      const cls=
+        x.payment_status==="APPROVED"
+          ?"approved"
+          :
+        x.payment_status==="REJECTED"
+          ?"rejected"
+          :
+          "pending";
+
+      return `
+
+        <div class="orderBox">
+
+          <div style="display:flex;justify-content:space-between;gap:10px">
+
+            <div>
+
+              <h3>${esc(x.email)}</h3>
+
+              <div class="small">
+                GB: ${esc(x.gb_number)}
+              </div>
+
+            </div>
+
+            <span class="badge ${cls}">
+              ${esc(x.payment_status)}
+            </span>
+
+          </div>
+
+          <p>
+            Reference:
+            <b>${esc(x.payment_reference||"—")}</b>
+          </p>
+
+          ${
+            x.payment_proof_url
+            ?
+            `<p>
+              <a href="${esc(x.payment_proof_url)}"
+                 target="_blank"
+                 rel="noopener">
+                VIEW PAYMENT PROOF
+              </a>
+            </p>`
+            :
+            ""
+          }
+
+          ${
+            x.admin_note
+            ?
+            `<p class="small">
+              Note: ${esc(x.admin_note)}
+            </p>`
+            :
+            ""
+          }
+
+          <div class="actions">
+
+            ${
+              x.payment_status!=="APPROVED"
+              ?
+              `<button class="btn success"
+                onclick="approveAccess('${esc(x.access_id)}')">
+                APPROVE
+              </button>`
+              :
+              ""
+            }
+
+            ${
+              x.payment_status!=="REJECTED"
+              ?
+              `<button class="btn danger"
+                onclick="rejectAccess('${esc(x.access_id)}')">
+                REJECT
+              </button>`
+              :
+              ""
+            }
+
+          </div>
+
+        </div>
+
+      `;
+
+    }).join("");
+}
+
+
+async function approveAccess(id){
+
+  const {data:userData}=await sb.auth.getUser();
+
+  const {error}=await sb
+    .from("gb_customer_access")
+    .update({
+      payment_status:"APPROVED",
+      approved_at:new Date().toISOString(),
+      approved_by:userData.user.id
+    })
+    .eq("access_id",id);
+
+  if(error) return showMessage(error.message,"error");
+
+  await loadPayments();
+
+  showMessage(
+    "Admin fee approved. Email notification will be handled by the email function.",
+    "success"
+  );
+}
+
+
+async function rejectAccess(id){
+
+  const note=
+    prompt("Reason / admin note (optional):") || "";
+
+  const {error}=await sb
+    .from("gb_customer_access")
+    .update({
+      payment_status:"REJECTED",
+      admin_note:note
+    })
+    .eq("access_id",id);
+
+  if(error) return showMessage(error.message,"error");
+
+  await loadPayments();
+
+  showMessage("Admin fee rejected.","success");
+}
+
+
+/* =========================================================
+   ORDERS
+========================================================= */
+
+async function searchOrders(){
+
+  const email=
+    $("orderSearch").value.trim().toLowerCase();
+
+  if(!email){
+
+    return showMessage(
+      "Enter a customer email.",
+      "error"
+    );
+
+  }
+
+  try{
+
+    const {data:orders,error} =
+      await sb
+        .from("orders")
+        .select("*")
+        .ilike("email",email)
+        .order("created_at",{ascending:true});
+
+    if(error) throw error;
+
+    if(!orders.length){
+
+      $("ordersResult").innerHTML =
+        `<div class="notice">
+          No orders found for ${esc(email)}.
+        </div>`;
+
+      return;
+    }
+
+    const ids=
+      orders.map(o=>o.order_id);
+
+    const {data:items,error:ie} =
+      await sb
+        .from("order_items")
+        .select("*")
+        .in("order_id",ids);
+
+    if(ie) throw ie;
+
+    $("ordersResult").innerHTML = `
+
+      <div class="adminCard">
+
+        <h3>${esc(email)}</h3>
+
+        <p>
+          <b>${orders.length}</b>
+          individual order(s)
+        </p>
+
+        ${orders.map(o=>{
+
+          const oi=
+            (items||[])
+              .filter(x=>x.order_id===o.order_id);
+
+          return `
+
+            <div class="orderBox">
+
+              <div style="display:flex;justify-content:space-between">
+
+                <b>${esc(o.order_id)}</b>
+
+                <span class="badge pending">
+                  PAYMENT:
+                  ${esc(o.payment_status)}
+                </span>
+
+              </div>
+
+              <p class="small">
+                GB: ${esc(o.gb_number)}
+                <br>
+                Created:
+                ${new Date(o.created_at).toLocaleString()}
+              </p>
+
+              ${oi.map(x=>`
+
+                <div class="orderItem">
+
+                  ${esc(x.product_name)}
+                  —
+                  ${esc(x.strength||"")}
+                  × ${Number(x.qty)}
+
+                  <span style="float:right">
+                    ${peso(x.line_total)}
+                  </span>
+
+                </div>
+
+              `).join("")}
+
+              <p>
+                Total:
+                <b>${peso(o.total)}</b>
+              </p>
+
+              <p class="small">
+                Shipping:
+                ${esc(o.shipping_method||"—")}
+                /
+                ${peso(o.shipping_fee)}
+              </p>
+
+            </div>
+
+          `;
+
+        }).join("")}
+
+      </div>
+
+    `;
+
+  }catch(e){
+
+    showMessage(e.message,"error");
+
+  }
+}
+
+
+/* =========================================================
+   CONSOLIDATED SHIPMENT
+========================================================= */
+
+async function searchShipment(){
+
+  const email=
+    $("trackingSearch").value.trim().toLowerCase();
+
+  if(!email){
+
+    return showMessage(
+      "Enter a customer email.",
+      "error"
+    );
+
+  }
+
+  try{
+
+    const {data:orders,error:oe} =
+      await sb
+        .from("orders")
+        .select("*")
+        .ilike("email",email)
+        .order("created_at",{ascending:true});
+
+    if(oe) throw oe;
+
+    const {data:shipments,error:se} =
+      await sb
+        .from("consolidated_shipments")
+        .select("*")
+        .ilike("email",email)
+        .order("created_at",{ascending:false});
+
+    if(se) throw se;
+
+    const shipment=
+      shipments && shipments.length
+        ? shipments[0]
+        : null;
+
+    currentShipment=shipment;
+
+    const unassigned=
+      orders.filter(o=>!o.shipment_id);
+
+    $("shipmentResult").innerHTML = `
+
+      ${
+        shipment
+        ?
+        renderShipment(shipment,orders)
+        :
+        `
+        <div class="notice">
+          No consolidated shipment exists yet for this email.
+        </div>
+        `
+      }
+
+      ${
+        unassigned.length
+        ?
+        `
+        <div class="adminCard">
+
+          <h3>Unassigned Orders</h3>
+
+          <p class="small">
+            These orders are not currently assigned to a shipment.
+          </p>
+
+          ${unassigned.map(o=>`
+
+            <label style="display:block;padding:7px 0">
+
+              <input
+                type="checkbox"
+                class="shipmentOrder"
+                value="${esc(o.order_id)}"
+                checked
+              >
+
+              ${esc(o.order_id)}
+              —
+              ${peso(o.total)}
+              —
+              ${esc(o.payment_status)}
+
+            </label>
+
+          `).join("")}
+
+          <div class="actions">
+
+            <button class="btn primary"
+              onclick="createConsolidatedShipment()">
+              CREATE CONSOLIDATED SHIPMENT
+            </button>
+
+          </div>
+
+        </div>
+        `
+        :
+        ""
+      }
+
+    `;
+
+  }catch(e){
+
+    showMessage(e.message,"error");
+
+  }
+}
+
+
+function renderShipment(shipment,orders){
+
+  const shipmentOrders=
+    orders.filter(o=>
+      o.shipment_id===shipment.shipment_id
+    );
+
+  const statusIndex=
+    TRACKING_STATUSES.indexOf(shipment.status);
+
+  return `
+
+    <div class="adminCard">
+
+      <div style="display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap">
+
+        <div>
+
+          <div class="small">
+            CONSOLIDATED SHIPMENT
+          </div>
+
+          <h2>
+            ${esc(shipment.email)}
+          </h2>
+
+          <div class="small">
+            Shipment ID:
+            ${esc(shipment.shipment_id)}
+          </div>
+
+          ${
+            shipment.waybill_number
+            ?
+            `<div class="small">
+              Waybill:
+              <b>${esc(shipment.waybill_number)}</b>
+            </div>`
+            :
+            ""
+          }
+
+        </div>
+
+        <div>
+
+          <div class="small">
+            CURRENT STATUS
+          </div>
+
+          <div class="shipmentStatus">
+            ${esc(shipment.status)}
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <hr style="border:0;border-top:1px solid var(--line);margin:20px 0">
+
+
+      <h3>Orders Included</h3>
+
+      ${
+        shipmentOrders.length
+        ?
+        shipmentOrders.map(o=>`
+
+          <div class="orderItem">
+
+            <b>${esc(o.order_id)}</b>
+
+            —
+            ${peso(o.total)}
+
+            <span class="small">
+              PAYMENT: ${esc(o.payment_status)}
+            </span>
+
+          </div>
+
+        `).join("")
+        :
+        `<div class="small">
+          No orders currently assigned.
+        </div>`
+      }
+
+
+      <h3 style="margin-top:25px">
+        Update Consolidated Tracking
+      </h3>
+
+      <div class="formGrid">
+
+        <div class="field">
+
+          <label>New Tracking Status</label>
+
+          <select id="newShipmentStatus">
+
+            ${
+              TRACKING_STATUSES.map((s,i)=>`
+
+                <option
+                  value="${esc(s)}"
+                  ${s===shipment.status?"selected":""}
+                >
+                  ${i+1}. ${esc(s)}
+                </option>
+
+              `).join("")
+            }
+
+          </select>
+
+        </div>
+
+
+        <div class="field">
+
+          <label>Courier</label>
+
+          <select id="shipmentCourier">
+
+            <option value="">—</option>
+
+            <option value="J&T"
+              ${shipment.courier==="J&T"?"selected":""}>
+              J&T
+            </option>
+
+            <option value="LALAMOVE"
+              ${shipment.courier==="LALAMOVE"?"selected":""}>
+              Lalamove
+            </option>
+
+            <option value="OTHER"
+              ${shipment.courier==="OTHER"?"selected":""}>
+              Other
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <div class="field">
+
+          <label>J&T / Courier Tracking Number</label>
+
+          <input
+            id="shipmentTrackingNumber"
+            value="${esc(shipment.tracking_number||"")}"
+            placeholder="Enter tracking number"
+          >
+
+        </div>
+
+
+        <div class="field">
+
+          <label>Waybill Number</label>
+
+          <input
+            id="shipmentWaybill"
+            value="${esc(shipment.waybill_number||"")}"
+            placeholder="PEPMOSA-WB-001"
+          >
+
+        </div>
+
+
+        <div class="field full">
+
+          <label>Notes</label>
+
+          <textarea id="shipmentNotes">${esc(shipment.notes||"")}</textarea>
+
+        </div>
+
+      </div>
+
+
+      <div class="actions">
+
+        <button class="btn primary"
+          onclick="updateShipment('${esc(shipment.shipment_id)}')">
+          UPDATE CONSOLIDATED SHIPMENT
+        </button>
+
+      </div>
+
+      ${
+        statusIndex>=2
+        ?
+        `<div class="notice">
+          Email notification begins from
+          <b>ORDER PROCESSING</b>.
+          The email function will use this shipment's consolidated orders.
+        </div>`
+        :
+        ""
+      }
+
+    </div>
+
+  `;
+}
+
+
+async function createConsolidatedShipment(){
+
+  const email=
+    $("trackingSearch").value.trim().toLowerCase();
+
+  const selected=
+    [...document.querySelectorAll(".shipmentOrder:checked")]
+      .map(x=>x.value);
+
+  if(!selected.length){
+
+    return showMessage(
+      "Select at least one order.",
+      "error"
+    );
+
+  }
+
+  try{
+
+    const {data:orders,error:oe} =
+      await sb
+        .from("orders")
+        .select("*")
+        .in("order_id",selected);
+
+    if(oe) throw oe;
+
+    if(!orders.length)
+      throw new Error("No orders selected.");
+
+    const customerId=
+      orders.find(o=>o.customer_id)?.customer_id || null;
+
+    const {data:shipment,error:se} =
+      await sb
+        .from("consolidated_shipments")
+        .insert({
+          email,
+          customer_id:customerId,
+          status:"ORDER RECEIVED"
+        })
+        .select()
+        .single();
+
+    if(se) throw se;
+
+    const {error:ue} =
+      await sb
+        .from("orders")
+        .update({
+          shipment_id:shipment.shipment_id
+        })
+        .in("order_id",selected);
+
+    if(ue) throw ue;
+
+    const {error:he} =
+      await sb
+        .from("shipment_status_history")
+        .insert({
+          shipment_id:shipment.shipment_id,
+          status:"ORDER RECEIVED"
+        });
+
+    if(he) throw he;
+
+    showMessage(
+      "Consolidated shipment created.",
+      "success"
+    );
+
+    await searchShipment();
+
+  }catch(e){
+
+    showMessage(e.message,"error");
+
+  }
+}
+
+
+async function updateShipment(id){
+
+  try{
+
+    const status=
+      $("newShipmentStatus").value;
+
+    const courier=
+      $("shipmentCourier").value || null;
+
+    const trackingNumber=
+      $("shipmentTrackingNumber").value.trim() || null;
+
+    const waybill=
+      $("shipmentWaybill").value.trim() || null;
+
+    const notes=
+      $("shipmentNotes").value.trim() || null;
+
+    const oldShipment=currentShipment;
+
+    const changed=
+      !oldShipment ||
+      oldShipment.status!==status ||
+      oldShipment.courier!==courier ||
+      oldShipment.tracking_number!==trackingNumber ||
+      oldShipment.waybill_number!==waybill;
+
+    if(!changed){
+
+      return showMessage(
+        "Nothing changed.",
+        "error"
+      );
+
+    }
+
+    const {data:userData}=await sb.auth.getUser();
+
+    const {error:ue} =
+      await sb
+        .from("consolidated_shipments")
+        .update({
+          status,
+          courier,
+          tracking_number:trackingNumber,
+          waybill_number:waybill,
+          notes,
+          delivered_at:
+            status==="DELIVERED"
+              ?new Date().toISOString()
+              :null
+        })
+        .eq("shipment_id",id);
+
+    if(ue) throw ue;
+
+    const {error:he} =
+      await sb
+        .from("shipment_status_history")
+        .insert({
+          shipment_id:id,
+          status,
+          courier,
+          tracking_number:trackingNumber,
+          changed_by:userData.user.id
+        });
+
+    if(he) throw he;
+
+    showMessage(
+      "Consolidated shipment updated.",
+      "success"
+    );
+
+    await searchShipment();
+
+  }catch(e){
+
+    showMessage(e.message,"error");
+
+  }
+}
+
+
+/* =========================================================
+   START
+========================================================= */
+
+checkAdmin();
+
+</script>
+
+</body>
+</html>
