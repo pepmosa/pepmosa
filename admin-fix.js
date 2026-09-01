@@ -1,75 +1,13 @@
-/* PEPMOSA admin repair layer. */
+/* PEPMOSA admin repair layer: GB cleanup + admin-fee approval workflow. */
 (function(){
-  'use strict';
-  const $=id=>document.getElementById(id);
-  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
-  const peso=v=>'₱'+Number(v||0).toLocaleString('en-PH',{minimumFractionDigits:2});
-
-  async function deleteGB(gbNumber){
-    if(!gbNumber)return;
-    if(!confirm(`DELETE ${gbNumber}?\n\nThis permanently deletes the Group Buy and ALL records belonging to it, including orders, order items, admin-fee payments, GB category settings, minimums, kit inventory and kit reservations.\n\nThis cannot be undone.`))return;
-    try{
-      const sb=window.sb||window.__sb; if(!sb)throw new Error('Supabase is not initialized. Please refresh the page.');
-      const steps=[
-        ['kit_reservations','gb_number'],['kit_inventory','gb_number'],['admin_fee_payments','gb_number'],
-        ['gb_minimum_quantities','gb_number'],['gb_categories','gb_number'],['orders','gb_number'],['group_buys','gb_number']
-      ];
-      for(const [table,col] of steps){
-        const {error}=await sb.from(table).delete().eq(col,gbNumber);
-        if(error && !/does not exist|relation .* does not exist/i.test(error.message||'')) throw error;
-      }
-      if(typeof window.loadGroupBuys==='function')await window.loadGroupBuys();
-      else if(typeof window.renderGroupBuys==='function')await window.renderGroupBuys();
-      if(typeof window.showMessage==='function')window.showMessage(`${gbNumber} and all related records were deleted.`,`success`);
-      else alert(`${gbNumber} deleted successfully.`);
-    }catch(e){console.error(e);alert('DELETE FAILED: '+(e.message||e));}
-  }
-  window.pepDeleteGB=deleteGB;
-
-  async function renderFeesFix(){
-    const box=$('feeList');if(!box)return;
-    const sb=window.sb||window.__sb;if(!sb){box.innerHTML='<div class="notice error">Supabase is not initialized.</div>';return;}
-    box.innerHTML='Loading…';
-    const q=($('feeSearch')?.value||'').trim().toLowerCase();
-    let query=sb.from('admin_fee_payments').select('*').order('created_at',{ascending:false}).limit(200);
-    if(q)query=query.ilike('email','%'+q+'%');
-    const {data,error}=await query;
-    if(error){box.innerHTML='<div class="notice error">Admin fee payments table is not ready. Run the admin_fee_payments migration once.</div>';return;}
-    if(!(data||[]).length){box.innerHTML='<div class="empty">No admin fee payments yet.</div>';return;}
-    box.innerHTML=data.map(x=>`<div class="item"><div class="itemHead"><div><b>${esc(x.email)}</b><div class="small">${esc(x.gb_number)} • ${peso(x.amount)} • ${new Date(x.created_at).toLocaleString('en-PH')}</div><div class="small">Reference: ${esc(x.payment_reference||'—')}</div><div class="small">${esc(x.note||'')}</div></div><span class="badge ${x.status==='PAID'?'green':x.status==='REJECTED'?'red':'yellow'}">${esc(x.status)}</span></div><div class="actions"><button class="btn success" onclick="window.pepSetFeeStatus('${esc(x.id)}','PAID')">MARK PAID</button><button class="btn danger" onclick="window.pepSetFeeStatus('${esc(x.id)}','REJECTED')">REJECT</button></div></div>`).join('');
-  }
-
-  window.pepSetFeeStatus=async function(id,status){
-    const sb=window.sb||window.__sb;if(!sb)return;
-    const {error}=await sb.from('admin_fee_payments').update({status,updated_at:new Date().toISOString()}).eq('id',id);
-    if(error)alert(error.message);else renderFeesFix();
-  };
-  window.renderFees=renderFeesFix;
-
-  function addGBDeleteButtons(){
-    const list=$('gbList');if(!list)return;
-    list.querySelectorAll('.item').forEach(item=>{
-      if(item.querySelector('.pepDeleteGBBtn'))return;
-      const text=item.textContent||'';
-      const match=text.match(/\b(GB[-\w]+)\b/); if(!match)return;
-      const actions=item.querySelector('.actions')||item.appendChild(Object.assign(document.createElement('div'),{className:'actions'}));
-      const b=document.createElement('button');b.className='btn danger pepDeleteGBBtn';b.textContent='DELETE GB';b.onclick=()=>deleteGB(match[1]);actions.appendChild(b);
-    });
-  }
-
-  function boot(){
-    let tries=0;const t=setInterval(()=>{
-      tries++;
-      if(window.sb && $('adminApp')){
-        clearInterval(t);
-        const feeTab=document.querySelector('[data-panel="feesPanel"]');
-        if(feeTab)feeTab.addEventListener('click',()=>setTimeout(renderFeesFix,50));
-        if($('feeSearch'))$('feeSearch').addEventListener('input',renderFeesFix);
-        const gbList=$('gbList');if(gbList)new MutationObserver(addGBDeleteButtons).observe(gbList,{childList:true,subtree:true});
-        setTimeout(addGBDeleteButtons,500);
-      }
-      if(tries>120)clearInterval(t);
-    },100);
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+'use strict';
+const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])),peso=v=>'₱'+Number(v||0).toLocaleString('en-PH',{minimumFractionDigits:2}),S=()=>window.sb||window.__sb;
+async function deleteGB(g){if(!g)return;if(!confirm(`DELETE ${g}?\n\nThis permanently deletes ALL data belonging to this Group Buy, including admin-fee payments, orders, order items, GB categories, minimums, kit inventory and reservations.\n\nCustomer records themselves will NOT be deleted.\n\nTHIS CANNOT BE UNDONE.`))return;const s=S();if(!s)return alert('Supabase is not initialized. Please refresh.');try{const os=await s.from('orders').select('order_id').eq('gb_number',g);if(os.error)throw os.error;const ids=(os.data||[]).map(x=>x.order_id);if(ids.length){let r=await s.from('order_items').delete().in('order_id',ids);if(r.error)throw r.error;for(const t of ['tracking','waybills','shipments']){r=await s.from(t).delete().in('order_id',ids);if(r.error&&!/does not exist|relation .* does not exist/i.test(r.error.message||''))throw r.error}r=await s.from('orders').delete().in('order_id',ids);if(r.error)throw r.error}for(const [t,c] of [['kit_reservations','gb_number'],['kit_inventory','gb_number'],['admin_fee_payments','gb_number'],['gb_minimum_quantities','gb_number'],['gb_categories','gb_number']]){const r=await s.from(t).delete().eq(c,g);if(r.error&&!/does not exist|relation .* does not exist/i.test(r.error.message||''))throw r.error}const r=await s.from('group_buys').delete().eq('gb_number',g);if(r.error)throw r.error;if(typeof window.loadGroupBuys==='function')await window.loadGroupBuys();else if(typeof window.renderGroupBuys==='function')await window.renderGroupBuys();alert(`${g} and all related records were deleted.`)}catch(e){console.error(e);alert('DELETE FAILED: '+(e.message||e))}}
+window.pepDeleteGB=deleteGB;
+async function renderFeesFix(){const box=$('feeList');if(!box)return;const s=S();if(!s){box.innerHTML='<div class="notice error">Supabase is not initialized.</div>';return}box.innerHTML='Loading…';const q=($('feeSearch')?.value||'').trim().toLowerCase();let query=s.from('admin_fee_payments').select('*').order('created_at',{ascending:false}).limit(200);if(q)query=query.or(`email.ilike.%${q}%,full_name.ilike.%${q}%,telegram_name.ilike.%${q}%,phone.ilike.%${q}%`);const {data,error}=await query;if(error){box.innerHTML='<div class="notice error">Admin fee table is not ready. Run admin-fee-customer-proof-migration.sql in Supabase SQL Editor.</div>';return}if(!(data||[]).length){box.innerHTML='<div class="empty">No admin fee payments yet.</div>';return}box.innerHTML=data.map(x=>{const st=x.status||'SUBMITTED';return `<div class="item"><div class="itemHead"><div><b>${esc(x.full_name||'No name')}</b><div class="small">Telegram: ${esc(x.telegram_name||'—')} • ${esc(x.phone||'—')}</div><div class="small">${esc(x.gb_number)} • ${peso(x.amount)} • ${new Date(x.created_at).toLocaleString('en-PH')}</div><div class="small">Email: ${esc(x.email||'Not verified yet')}</div>${x.payment_proof_url?`<div style="margin-top:10px"><a href="${esc(x.payment_proof_url)}" target="_blank" rel="noopener"><img src="${esc(x.payment_proof_url)}" alt="Payment proof" style="max-width:280px;max-height:220px;object-fit:contain;border:1px solid #ead9e4;border-radius:12px"></a></div>`:'<div class="small">Payment proof: missing</div>'}</div><span class="badge ${st==='PAID'?'green':st==='REJECTED'?'red':'yellow'}">${esc(st==='SUBMITTED'?'PENDING':st)}</span></div>${st==='SUBMITTED'?`<div class="actions"><button class="btn success" onclick="window.pepSetFeeStatus('${esc(x.id)}','PAID')">APPROVE PAYMENT</button><button class="btn danger" onclick="window.pepSetFeeStatus('${esc(x.id)}','REJECTED')">REJECT</button></div>`:''}</div>`}).join('')}
+window.pepSetFeeStatus=async function(id,status){const s=S();if(!s)return;if(!confirm((status==='PAID'?'APPROVE':'REJECT')+' this admin fee payment?'))return;const r=await s.from('admin_fee_payments').update({status,updated_at:new Date().toISOString()}).eq('id',id);if(r.error)alert(r.error.message);else{await renderFeesFix();if(status==='PAID')alert('Admin fee approved. Customer can now verify their email and continue ordering.')}};
+window.renderFees=renderFeesFix;
+function addGBDeleteButtons(){const list=$('gbList');if(!list)return;list.querySelectorAll('.item').forEach(item=>{if(item.querySelector('.pepDeleteGBBtn'))return;const m=(item.textContent||'').match(/\b(GB[-\w]+)\b/);if(!m)return;const actions=item.querySelector('.actions')||item.appendChild(Object.assign(document.createElement('div'),{className:'actions'}));const b=document.createElement('button');b.className='btn danger pepDeleteGBBtn';b.textContent='DELETE GB';b.onclick=()=>deleteGB(m[1]);actions.appendChild(b)})}
+function boot(){let n=0;const t=setInterval(()=>{if(S()&&$('adminApp')){clearInterval(t);const ft=document.querySelector('[data-panel="feesPanel"]');if(ft)ft.addEventListener('click',()=>setTimeout(renderFeesFix,50));if($('feeSearch'))$('feeSearch').addEventListener('input',renderFeesFix);const l=$('gbList');if(l)new MutationObserver(addGBDeleteButtons).observe(l,{childList:true,subtree:true});setTimeout(addGBDeleteButtons,500)}if(++n>120)clearInterval(t)},100)}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
