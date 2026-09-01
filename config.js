@@ -84,7 +84,6 @@ window.PEPMOSA_CONFIG = {
               .eq("product_id", categoryName);
 
             if (legacyError && !String(legacyError.message || "").toLowerCase().includes("does not exist")) {
-              // Ignore legacy-table mismatch; category deletion itself can still proceed.
               console.warn("Legacy category minimum cleanup skipped:", legacyError);
             }
 
@@ -134,12 +133,23 @@ window.PEPMOSA_CONFIG = {
           });
         };
 
-        // Re-render immediately so the DELETE button appears without waiting
-        // for another category refresh.
         try { window.renderCategories(); } catch (e) { console.error(e); }
         clearInterval(timer);
       }
       if (attempts >= 300) clearInterval(timer);
     }, 100);
+  });
+
+  // Load repair layers after the original page scripts have initialized.
+  document.addEventListener("DOMContentLoaded", function () {
+    const path = (window.location.pathname || "").toLowerCase();
+    const isAdmin = path.endsWith("/admin.html") || path.endsWith("admin.html");
+    const isStorefront = path === "/" || path.endsWith("/index.html") || path.endsWith("index.html");
+    const file = isAdmin ? "admin-fix.js" : (isStorefront ? "storefront-fix.js" : "");
+    if (!file || document.querySelector('script[data-pepmosa-fix="'+file+'"]')) return;
+    const s = document.createElement("script");
+    s.src = file + "?v=20260901-1";
+    s.dataset.pepmosaFix = file;
+    document.body.appendChild(s);
   });
 })();
