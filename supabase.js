@@ -49,8 +49,9 @@ async function requireAdmin() {
   };
 }
 
-const esc = (value) =>
-  String(value ?? "").replace(
+/* Shared helpers use var so individual pages can safely define their own helpers. */
+var esc = function(value) {
+  return String(value ?? "").replace(
     /[&<>"']/g,
     (m) =>
       ({
@@ -61,9 +62,11 @@ const esc = (value) =>
         "'": "&#039;"
       })[m]
   );
+};
 
-const peso = (value) =>
-  "₱" +
-  Number(value || 0).toLocaleString("en-PH", {
-    minimumFractionDigits: 2
-  });
+var peso = function(value) {
+  return "₱" +
+    Number(value || 0).toLocaleString("en-PH", {
+      minimumFractionDigits: 2
+    });
+};
